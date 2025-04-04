@@ -1,0 +1,191 @@
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.section {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    padding: 20px;
+}
+
+.section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+}
+
+.monitoring-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.monitoring-card {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.monitoring-card h3 {
+    color: #444;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.attendance-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #fff;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.mesa {
+    font-weight: bold;
+    color: #666;
+}
+
+.senha {
+    color: #2196F3;
+    font-weight: bold;
+}
+
+.servico {
+    color: #4CAF50;
+}
+
+.queue-stats {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: #fff;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.performance-filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.performance-filters select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    min-width: 200px;
+}
+
+.performance-filters button {
+    padding: 8px 16px;
+    background: #2196F3;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.performance-filters button:hover {
+    background: #1976D2;
+}
+
+.performance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.performance-card {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.performance-card h3 {
+    color: #444;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.stat-item {
+    background: #fff;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.stat-item h4 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.stat-item p {
+    color: #666;
+    margin: 5px 0;
+}
+
+.management-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+.management-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.management-actions button.danger-button {
+    background: #dc3545;
+    color: #fff;
+}
+
+.management-actions button.danger-button:hover {
+    background: #c82333;
+}
+
+.management-actions button:not(.danger-button) {
+    background: #28a745;
+    color: #fff;
+}
+
+.management-actions button:not(.danger-button):hover {
+    background: #218838;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 10px;
+    }
+
+    .performance-filters {
+        flex-direction: column;
+    }
+
+    .performance-filters select {
+        width: 100%;
+    }
+
+    .management-actions {
+        flex-direction: column;
+    }
+
+    .management-actions button {
+        width: 100%;
+    }
+} 

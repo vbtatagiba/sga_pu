@@ -1,0 +1,156 @@
+.dashboard-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    padding: 20px;
+}
+
+.section h2 {
+    color: #003366;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.monitoring-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.monitoring-card {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.monitoring-card h3 {
+    color: #336699;
+    margin-bottom: 15px;
+}
+
+.attendance-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #fff;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.mesa {
+    font-weight: bold;
+    color: #003366;
+}
+
+.senha {
+    color: #009933;
+    font-weight: bold;
+}
+
+.servico {
+    color: #666;
+}
+
+.queue-stats {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: #fff;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.performance-filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.performance-filters select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-width: 200px;
+}
+
+.performance-filters button {
+    padding: 8px 16px;
+    background: #003366;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.performance-filters button:hover {
+    background: #002244;
+}
+
+.performance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.performance-card {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.stat-item {
+    background: #fff;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.stat-item h4 {
+    color: #003366;
+    margin-bottom: 10px;
+}
+
+.stat-item p {
+    color: #666;
+    margin: 5px 0;
+}
+
+.management-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.management-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.management-actions button.danger-button {
+    background: #dc3545;
+    color: #fff;
+}
+
+.management-actions button.danger-button:hover {
+    background: #c82333;
+}
+
+.management-actions button:not(.danger-button) {
+    background: #003366;
+    color: #fff;
+}
+
+.management-actions button:not(.danger-button):hover {
+    background: #002244;
+} 

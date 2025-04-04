@@ -8,6 +8,16 @@ from .serializers import ServicoSerializer, AtendimentoSerializer
 import random
 from rest_framework import status
 from datetime import datetime
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils import timezone
+from django.db.models import Avg, Count
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from datetime import timedelta
+import json
 
 class AtendimentoViewSet(viewsets.ModelViewSet):
     queryset = Atendimento.objects.all().order_by('-criado_em')
@@ -21,9 +31,9 @@ class AtendimentoViewSet(viewsets.ModelViewSet):
         try:
             servico = Servico.objects.get(id=servico_id)
             
-            # Gera uma senha usando timestamp para garantir unicidade
-            timestamp = datetime.now().strftime('%H%M%S')
-            nova_senha = f"{servico.sigla}{timestamp}"
+            # Gera uma senha usando número sequencial
+            numero = servico.gerar_proximo_numero()
+            nova_senha = f"{servico.sigla}{numero}"
             
             atendimento = Atendimento.objects.create(
                 senha=nova_senha,
@@ -106,3 +116,98 @@ class AtendimentoViewSet(viewsets.ModelViewSet):
 class ServicoViewSet(viewsets.ModelViewSet):
     queryset = Servico.objects.all()
     serializer_class = ServicoSerializer
+
+@staff_member_required
+def dashboard(request):
+    return render(request, 'admin/dashboard.html')
+
+@staff_member_required
+@require_http_methods(["GET"])
+def analise_desempenho(request):
+    periodo = request.GET.get('periodo', 'manha')
+    mesa = request.GET.get('mesa', 'todas')
+    
+    # Definir período de tempo
+    hoje = timezone.now().date()
+    if periodo == 'manha':
+        inicio = datetime.combine(hoje, datetime.strptime('07:00', '%H:%M').time())
+        fim = datetime.combine(hoje, datetime.strptime('13:00', '%H:%M').time())
+    else:  # tarde
+        inicio = datetime.combine(hoje, datetime.strptime('13:00', '%H:%M').time())
+        fim = datetime.combine(hoje, datetime.strptime('19:00', '%H:%M').time())
+    
+    # Filtrar atendimentos
+    atendimentos = Atendimento.objects.filter(
+        data_criacao__date=hoje,
+        data_criacao__time__gte=inicio.time(),
+        data_criacao__time__lt=fim.time(),
+        status='finalizado'
+    )
+    
+    if mesa != 'todas':
+        atendimentos = atendimentos.filter(mesa=mesa)
+    
+    # Estatísticas por mesa
+    mesa_stats = []
+    for mesa_num in range(1, 4):
+        mesa_atendimentos = atendimentos.filter(mesa=mesa_num)
+        total = mesa_atendimentos.count()
+        tempo_medio = mesa_atendimentos.aggregate(Avg('tempo_atendimento'))['tempo_atendimento__avg'] or 0
+        
+        mesa_stats.append({
+            'numero': mesa_num,
+            'total': total,
+            'tempo_medio': round(tempo_medio, 1)
+        })
+    
+    # Estatísticas por serviço
+    servico_stats = []
+    for servico in Servico.objects.all():
+        servico_atendimentos = atendimentos.filter(servico=servico)
+        total = servico_atendimentos.count()
+        tempo_medio = servico_atendimentos.aggregate(Avg('tempo_atendimento'))['tempo_atendimento__avg'] or 0
+        
+        servico_stats.append({
+            'nome': servico.nome,
+            'total': total,
+            'tempo_medio': round(tempo_medio, 1)
+        })
+    
+    return JsonResponse({
+        'mesas': mesa_stats,
+        'servicos': servico_stats
+    })
+
+@staff_member_required
+@require_http_methods(["POST"])
+def limpar_dados(request):
+    try:
+        # Limpar todos os atendimentos
+        Atendimento.objects.all().delete()
+        return JsonResponse({'message': 'Dados limpos com sucesso'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@staff_member_required
+@require_http_methods(["GET"])
+def exportar_dados(request):
+    try:
+        # Exportar dados dos últimos 30 dias
+        data_inicio = timezone.now() - timedelta(days=30)
+        atendimentos = Atendimento.objects.filter(data_criacao__gte=data_inicio)
+        
+        dados = []
+        for atendimento in atendimentos:
+            dados.append({
+                'senha': atendimento.senha,
+                'servico': atendimento.servico.nome,
+                'mesa': atendimento.mesa,
+                'status': atendimento.status,
+                'data_criacao': atendimento.data_criacao.strftime('%Y-%m-%d %H:%M:%S'),
+                'data_finalizacao': atendimento.data_finalizacao.strftime('%Y-%m-%d %H:%M:%S') if atendimento.data_finalizacao else None,
+                'tempo_atendimento': atendimento.tempo_atendimento
+            })
+        
+        return JsonResponse({'dados': dados})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

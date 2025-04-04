@@ -1,0 +1,230 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+<!-- Carrega o arquivo CSS personalizado para o dashboard -->
+<link rel="stylesheet" href="{% static 'admin/css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Container principal do dashboard -->
+<div class="dashboard-container">
+    <!-- Seção de Monitoramento em Tempo Real -->
+    <div class="section">
+        <h2>Monitoramento em Tempo Real</h2>
+        <div class="monitoring-grid">
+            <!-- Card de Atendimentos Ativos -->
+            <div class="monitoring-card">
+                <h3>Atendimentos Ativos</h3>
+                <div id="active-attendances">
+                    <!-- Mesa 1 -->
+                    <div class="attendance-item">
+                        <span class="mesa">Mesa 1:</span>
+                        <span class="senha" id="mesa1-senha">-</span>
+                        <span class="servico" id="mesa1-servico">-</span>
+                    </div>
+                    <!-- Mesa 2 -->
+                    <div class="attendance-item">
+                        <span class="mesa">Mesa 2:</span>
+                        <span class="senha" id="mesa2-senha">-</span>
+                        <span class="servico" id="mesa2-servico">-</span>
+                    </div>
+                    <!-- Mesa 3 -->
+                    <div class="attendance-item">
+                        <span class="mesa">Mesa 3:</span>
+                        <span class="senha" id="mesa3-senha">-</span>
+                        <span class="servico" id="mesa3-servico">-</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Card de Fila de Espera -->
+            <div class="monitoring-card">
+                <h3>Fila de Espera</h3>
+                <div id="waiting-queue">
+                    <div class="queue-stats">
+                        <span>Total na fila:</span>
+                        <span id="total-fila">0</span>
+                    </div>
+                    <div class="queue-stats">
+                        <span>Tempo médio de espera:</span>
+                        <span id="tempo-medio">0 min</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Análise de Desempenho -->
+    <div class="section">
+        <h2>Análise de Desempenho</h2>
+        <!-- Filtros de análise -->
+        <div class="performance-filters">
+            <select id="periodo-select">
+                <option value="manha">Manhã (07h-13h)</option>
+                <option value="tarde">Tarde (13h-19h)</option>
+            </select>
+            <select id="mesa-select">
+                <option value="todas">Todas as Mesas</option>
+                <option value="1">Mesa 1</option>
+                <option value="2">Mesa 2</option>
+                <option value="3">Mesa 3</option>
+            </select>
+            <button id="atualizar-analise">Atualizar Análise</button>
+        </div>
+        <!-- Grid de estatísticas -->
+        <div class="performance-grid">
+            <!-- Card de estatísticas por mesa -->
+            <div class="performance-card">
+                <h3>Estatísticas por Mesa</h3>
+                <div id="mesa-stats">
+                    <div class="stat-item">
+                        <h4>Carregando...</h4>
+                    </div>
+                </div>
+            </div>
+            <!-- Card de estatísticas por serviço -->
+            <div class="performance-card">
+                <h3>Estatísticas por Serviço</h3>
+                <div id="servico-stats">
+                    <div class="stat-item">
+                        <h4>Carregando...</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Gerenciamento -->
+    <div class="section">
+        <h2>Gerenciamento</h2>
+        <div class="management-actions">
+            <button id="limpar-dados" class="danger-button">Limpar Dados</button>
+            <button id="exportar-dados">Exportar Dados</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Função para mostrar mensagens de erro
+    function showError(message) {
+        console.error(message);
+        alert('Erro: ' + message);
+    }
+
+    // Função para verificar autenticação e obter token CSRF
+    function checkAuth() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        return {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        };
+    }
+
+    // Função para atualizar o monitoramento em tempo real
+    function updateMonitoring() {
+        fetch('/api/atendimentos/painel_chamadas/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar dados do painel');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Atualiza informações das mesas
+                ['1', '2', '3'].forEach(mesa => {
+                    const atendimento = data[`mesa${mesa}`];
+                    document.getElementById(`mesa${mesa}-senha`).textContent = atendimento ? atendimento.senha : '-';
+                    document.getElementById(`mesa${mesa}-servico`).textContent = atendimento ? atendimento.servico_nome : '-';
+                });
+
+                // Atualiza informações da fila
+                document.getElementById('total-fila').textContent = data.fila_total || 0;
+                document.getElementById('tempo-medio').textContent = `${data.tempo_medio_espera || 0} min`;
+            })
+            .catch(error => {
+                showError(error.message);
+            });
+    }
+
+    // Função para atualizar a análise de desempenho
+    function updatePerformance() {
+        const periodo = document.getElementById('periodo-select').value;
+        const mesa = document.getElementById('mesa-select').value;
+
+        fetch(`/api/atendimentos/analise_desempenho/?periodo=${periodo}&mesa=${mesa}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar análise de desempenho');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Atualiza estatísticas por mesa
+                const mesaStats = document.getElementById('mesa-stats');
+                if (data.mesas && data.mesas.length > 0) {
+                    mesaStats.innerHTML = data.mesas.map(mesa => `
+                        <div class="stat-item">
+                            <h4>Mesa ${mesa.numero}</h4>
+                            <p>Total: ${mesa.total}</p>
+                            <p>Tempo Médio: ${mesa.tempo_medio} min</p>
+                        </div>
+                    `).join('');
+                } else {
+                    mesaStats.innerHTML = '<div class="stat-item"><h4>Nenhum dado disponível</h4></div>';
+                }
+
+                // Atualiza estatísticas por serviço
+                const servicoStats = document.getElementById('servico-stats');
+                if (data.servicos && data.servicos.length > 0) {
+                    servicoStats.innerHTML = data.servicos.map(servico => `
+                        <div class="stat-item">
+                            <h4>${servico.nome}</h4>
+                            <p>Total: ${servico.total}</p>
+                            <p>Tempo Médio: ${servico.tempo_medio} min</p>
+                        </div>
+                    `).join('');
+                } else {
+                    servicoStats.innerHTML = '<div class="stat-item"><h4>Nenhum dado disponível</h4></div>';
+                }
+            })
+            .catch(error => {
+                showError(error.message);
+                document.getElementById('mesa-stats').innerHTML = '<div class="stat-item"><h4>Erro ao carregar dados</h4></div>';
+                document.getElementById('servico-stats').innerHTML = '<div class="stat-item"><h4>Erro ao carregar dados</h4></div>';
+            });
+    }
+
+    // Event Listeners
+    document.getElementById('atualizar-analise').addEventListener('click', updatePerformance);
+    
+    // Listener para limpar dados
+    document.getElementById('limpar-dados').addEventListener('click', () => {
+        if (confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
+            fetch('/api/atendimentos/limpar_dados/', { 
+                method: 'POST',
+                headers: checkAuth()
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao limpar dados');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Dados limpos com sucesso!');
+                updateMonitoring();
+                updatePerformance();
+            })
+            .catch(error => {
+                showError(error.message);
+            });
+        }
+    });
+
+    // Inicialização
+    updateMonitoring();
+    updatePerformance();
+    // Atualiza o monitoramento a cada 5 segundos
+    setInterval(updateMonitoring, 5000);
+</script>
+{% endblock %} 
