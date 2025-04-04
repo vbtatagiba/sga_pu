@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./sga_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sga_backend:/app
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=sga_backend.settings
+    depends_on:
+      - db
+
+  frontend:
+    build: ./sga-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./sga-frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=sga_db
+      - MYSQL_USER=sga_user
+      - MYSQL_PASSWORD=sga_password
+      - MYSQL_ROOT_PASSWORD=root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data: 

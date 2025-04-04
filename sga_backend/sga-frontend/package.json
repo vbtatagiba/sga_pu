@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "copy-webpack-plugin": "^13.0.0"
+  },
+  "dependencies": {
+    "@mui/icons-material": "^7.0.1"
+  }
+}

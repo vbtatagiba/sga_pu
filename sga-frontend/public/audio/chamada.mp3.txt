@@ -1,0 +1,18 @@
+INSTRUÇÕES PARA ADICIONAR O ARQUIVO DE ÁUDIO
+
+Para que o sistema funcione corretamente com as notificações sonoras, você precisa:
+
+1. Renomear este arquivo de "chamada.mp3.txt" para "chamada.mp3"
+2. Ou baixar um arquivo de áudio de sua preferência e renomeá-lo para "chamada.mp3"
+
+Recomendações:
+- Use um arquivo de áudio curto (1-2 segundos)
+- O arquivo deve estar em formato MP3
+- O volume deve ser adequado para um ambiente de sala de espera
+
+Fontes para download de áudio:
+- https://freesound.org/
+- https://mixkit.co/free-sound-effects/
+- https://soundbible.com/
+
+Após adicionar o arquivo, o sistema irá automaticamente tocar o som quando uma nova senha for chamada. 
