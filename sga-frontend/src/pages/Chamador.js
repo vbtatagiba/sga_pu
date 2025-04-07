@@ -3,14 +3,15 @@ import { Container, Button, Typography, Paper } from '@mui/material';
 import axios from 'axios';
 
 const Chamador = () => {
-  const [ultimaChamada, setUltimaChamada] = useState(null);
+  const [ultimaChamada, setUltimaChamada] = useState(null); // Estado para armazenar a última chamada
 
   const chamarProximo = async () => {
     try {
+      // Faz uma requisição para chamar o próximo atendimento
       const response = await axios.post('http://localhost:8000/api/atendimentos/chamar_proximo/');
-      setUltimaChamada(response.data);
+      setUltimaChamada(response.data); // Atualiza o estado com a última chamada
     } catch (error) {
-      console.error('Erro ao chamar próximo:', error);
+      console.error('Erro ao chamar próximo:', error); // Log de erro
     }
   };
 

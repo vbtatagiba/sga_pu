@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-*h_yi^jf@58xid9k8q_1f2hyw-6&++-=6lmhv#a_^kz7lkqh0+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -53,7 +54,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'sga_backend.urls'
@@ -84,9 +84,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'sga_db',
-        'USER': 'root',
-        'PASSWORD': '12345678',  # Senha do banco de dados MySQL
-        'HOST': 'localhost',  # ou IP do servidor MySQL
+        'USER': 'sga_user',
+        'PASSWORD': 'sga_password',
+        'HOST': 'db',  # Nome do serviço no docker-compose
         'PORT': '3306',
     }
 }
@@ -111,6 +111,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/

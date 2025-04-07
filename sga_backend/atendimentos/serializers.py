@@ -4,7 +4,7 @@ from .models import Servico, Atendimento
 class ServicoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Servico
-        fields = '__all__'
+        fields = ['id', 'nome', 'sigla', 'tempo_estimado', 'ultimo_numero']
 
 class AtendimentoSerializer(serializers.ModelSerializer):
     servico_nome = serializers.ReadOnlyField(source='servico.nome')

@@ -3,33 +3,33 @@ import { Container, Button, Typography, Paper, Select, MenuItem, FormControl, In
 import axios from 'axios';
 
 const TotemAtendimento = () => {
-  const [servicos, setServicos] = useState([]);
-  const [servicoSelecionado, setServicoSelecionado] = useState('');
-  const [senhaGerada, setSenhaGerada] = useState(null);
+  const [servicos, setServicos] = useState([]); // Estado para armazenar os serviços disponíveis
+  const [servicoSelecionado, setServicoSelecionado] = useState(''); // Estado para armazenar o serviço selecionado
+  const [senhaGerada, setSenhaGerada] = useState(null); // Estado para armazenar a senha gerada
 
   useEffect(() => {
     const fetchServicos = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/servicos/');
-        setServicos(response.data);
+        const response = await axios.get('http://localhost:8000/api/servicos/'); // Faz uma requisição para obter os serviços
+        setServicos(response.data); // Atualiza o estado com os serviços recebidos
       } catch (error) {
-        console.error('Erro ao buscar serviços:', error);
+        console.error('Erro ao buscar serviços:', error); // Log de erro
       }
     };
 
-    fetchServicos();
+    fetchServicos(); // Chama a função para buscar serviços
   }, []);
 
   const gerarSenha = async () => {
-    if (!servicoSelecionado) return;
+    if (!servicoSelecionado) return; // Verifica se um serviço foi selecionado
     
     try {
       const response = await axios.post('http://localhost:8000/api/atendimentos/gerar_senha/', {
-        servico_id: servicoSelecionado,
+        servico_id: servicoSelecionado, // Envia o ID do serviço selecionado
       });
-      setSenhaGerada(response.data.senha);
+      setSenhaGerada(response.data.senha); // Atualiza o estado com a senha gerada
     } catch (error) {
-      console.error('Erro ao gerar senha:', error);
+      console.error('Erro ao gerar senha:', error); // Log de erro
     }
   };
 
@@ -44,7 +44,7 @@ const TotemAtendimento = () => {
           <Select value={servicoSelecionado} onChange={(e) => setServicoSelecionado(e.target.value)}>
             {servicos.map((servico) => (
               <MenuItem key={servico.id} value={servico.id}>
-                {servico.nome}
+                {servico.nome} // Exibe o nome do serviço
               </MenuItem>
             ))}
           </Select>
@@ -54,7 +54,7 @@ const TotemAtendimento = () => {
         </Button>
         {senhaGerada && (
           <Typography variant="h5" sx={{ marginTop: 2 }}>
-            Sua senha: <strong>{senhaGerada}</strong>
+            Sua senha: <strong>{senhaGerada}</strong> // Exibe a senha gerada
           </Typography>
         )}
       </Paper>

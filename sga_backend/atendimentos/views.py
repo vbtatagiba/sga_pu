@@ -138,9 +138,9 @@ def analise_desempenho(request):
     
     # Filtrar atendimentos
     atendimentos = Atendimento.objects.filter(
-        data_criacao__date=hoje,
-        data_criacao__time__gte=inicio.time(),
-        data_criacao__time__lt=fim.time(),
+        criado_em__date=hoje,
+        criado_em__time__gte=inicio.time(),
+        criado_em__time__lt=fim.time(),
         status='finalizado'
     )
     
@@ -194,7 +194,7 @@ def exportar_dados(request):
     try:
         # Exportar dados dos últimos 30 dias
         data_inicio = timezone.now() - timedelta(days=30)
-        atendimentos = Atendimento.objects.filter(data_criacao__gte=data_inicio)
+        atendimentos = Atendimento.objects.filter(criado_em__gte=data_inicio)
         
         dados = []
         for atendimento in atendimentos:
@@ -203,9 +203,11 @@ def exportar_dados(request):
                 'servico': atendimento.servico.nome,
                 'mesa': atendimento.mesa,
                 'status': atendimento.status,
-                'data_criacao': atendimento.data_criacao.strftime('%Y-%m-%d %H:%M:%S'),
-                'data_finalizacao': atendimento.data_finalizacao.strftime('%Y-%m-%d %H:%M:%S') if atendimento.data_finalizacao else None,
-                'tempo_atendimento': atendimento.tempo_atendimento
+                'criado_em': atendimento.criado_em.strftime('%Y-%m-%d %H:%M:%S'),
+                'chamado_em': atendimento.chamado_em.strftime('%Y-%m-%d %H:%M:%S') if atendimento.chamado_em else None,
+                'finalizado_em': atendimento.finalizado_em.strftime('%Y-%m-%d %H:%M:%S') if atendimento.finalizado_em else None,
+                'tempo_atendimento': atendimento.tempo_atendimento,
+                'periodo': atendimento.periodo
             })
         
         return JsonResponse({'dados': dados})

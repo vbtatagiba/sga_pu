@@ -2,6 +2,11 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
+from django.core.management import call_command
+
+
+def create_superuser(apps, schema_editor):
+    call_command('criar_superuser_padrao')
 
 
 class Migration(migrations.Migration):
@@ -33,4 +38,5 @@ class Migration(migrations.Migration):
                 ('servico', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='atendimentos', to='atendimentos.servico')),
             ],
         ),
+        migrations.RunPython(create_superuser),
     ]
