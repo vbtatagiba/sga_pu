@@ -21,7 +21,7 @@ services:
       - ./sga-frontend:/app
       - /app/node_modules
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_URL=http://10.1.218.112:8000
 
   db:
     image: mysql:8.0

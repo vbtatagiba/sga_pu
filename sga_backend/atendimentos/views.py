@@ -61,27 +61,30 @@ class AtendimentoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def chamar_proximo(self, request):
         """Chama a próxima senha na fila e finaliza a anterior automaticamente"""
-        atendimento_anterior = Atendimento.objects.filter(status='chamado').order_by('-chamado_em').first()
+        # Obtém a mesa selecionada do request
+        mesa_selecionada = request.data.get('mesa', 1)
+        
+        # Finaliza o atendimento anterior da mesma mesa
+        atendimento_anterior = Atendimento.objects.filter(mesa=mesa_selecionada, status='chamado').order_by('-chamado_em').first()
         
         if atendimento_anterior:
             atendimento_anterior.status = 'finalizado'
             atendimento_anterior.finalizado_em = now()
             atendimento_anterior.save()
 
-        atendimento = Atendimento.objects.filter(status='pendente').order_by('criado_em').first()
+        # Primeiro, tenta buscar a próxima senha pendente para a mesa selecionada
+        atendimento = Atendimento.objects.filter(mesa=mesa_selecionada, status='pendente').order_by('criado_em').first()
         
+        # Se não houver senha pendente para a mesa selecionada, busca a próxima senha pendente de qualquer mesa
         if not atendimento:
-            return Response({"message": "Nenhuma senha na fila."}, status=400)
-        
-        # Atribuir mesa com base no serviço
-        if atendimento.servico.nome == "Bolsa Auxílio":
-            atendimento.mesa = 3
-        else:
-            # Atribui mesa 1 ou 2 com base na disponibilidade
-            if Atendimento.objects.filter(mesa=1, status='chamado').count() == 0:
-                atendimento.mesa = 1
-            else:
-                atendimento.mesa = 2
+            atendimento = Atendimento.objects.filter(status='pendente').order_by('criado_em').first()
+            
+            # Se ainda não houver senha pendente, retorna erro
+            if not atendimento:
+                return Response({"message": "Nenhuma senha na fila."}, status=400)
+            
+            # Atualiza a mesa do atendimento para a mesa selecionada
+            atendimento.mesa = mesa_selecionada
         
         atendimento.status = 'chamado'
         atendimento.chamado_em = now()

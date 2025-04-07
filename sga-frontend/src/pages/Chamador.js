@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { Container, Button, Typography, Paper } from '@mui/material';
 import axios from 'axios';
+import API_ENDPOINTS from '../config/api';
 
 const Chamador = () => {
   const [ultimaChamada, setUltimaChamada] = useState(null); // Estado para armazenar a última chamada
 
   const chamarProximo = async () => {
     try {
-      // Faz uma requisição para chamar o próximo atendimento
-      const response = await axios.post('http://localhost:8000/api/atendimentos/chamar_proximo/');
+      // Obtém a mesa selecionada do localStorage
+      const mesaSelecionada = localStorage.getItem("mesa") || "1";
+      
+      // Faz uma requisição para chamar o próximo atendimento, enviando a mesa selecionada
+      const response = await axios.post(API_ENDPOINTS.CHAMAR_PROXIMO, {
+        mesa: mesaSelecionada
+      });
       setUltimaChamada(response.data); // Atualiza o estado com a última chamada
     } catch (error) {
       console.error('Erro ao chamar próximo:', error); // Log de erro

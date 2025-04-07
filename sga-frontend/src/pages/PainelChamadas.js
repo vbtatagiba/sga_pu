@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Paper, Typography, Grid, List, ListItem, ListItemText, Divider, Container } from '@mui/material';
 import axios from 'axios';
 import { API_KEYS } from '../config/api-keys';
+import API_ENDPOINTS from '../config/api';
 
 const PainelChamadas = () => {
   const [dadosPainel, setDadosPainel] = useState({
@@ -22,6 +23,8 @@ const PainelChamadas = () => {
   const [tempoUltimaFala, setTempoUltimaFala] = useState(0); // Estado para controlar o tempo da última fala
   const [bloqueioFala, setBloqueioFala] = useState(false); // Estado para bloquear a fala temporariamente
   const [audioPlayer, setAudioPlayer] = useState(null); // Estado para armazenar o player de áudio
+  const [autoplayPermitido, setAutoplayPermitido] = useState(false); // Estado para controlar se o autoplay é permitido
+  const [senhasParaFalar, setSenhasParaFalar] = useState([]); // Lista de senhas a serem faladas
   
   // Referências para controlar o estado da fala
   const falandoRef = useRef(false);
@@ -30,20 +33,22 @@ const PainelChamadas = () => {
   const bloqueioFalaRef = useRef(false);
   const audioPlayerRef = useRef(null);
   const timeoutRef = useRef(null);
+  const senhasParaFalarRef = useRef([]); // Referência para a lista de senhas a serem faladas
 
   // Chave da API do Google Cloud
   const API_KEY = API_KEYS.GOOGLE_CLOUD_API_KEY;
   
   const falarSenha = async (senha, mesa, servico) => {
-    // Verifica se já está lendo ou se está bloqueado usando as refs
+    const agora = new Date();
+    
+    // Verifica se já está falando ou se está bloqueado
     if (falandoRef.current || bloqueioFalaRef.current) {
       console.log("Já está falando ou bloqueado, ignorando nova fala");
       return;
     }
     
-    // Verifica se a senha é a mesma da última falada e se passou menos de 5 segundos
-    const agora = Date.now();
-    if (ultimaSenhaRef.current === senha && agora - tempoUltimaFalaRef.current < 5000) {
+    // Verifica se a senha é a mesma da última falada
+    if (ultimaSenhaRef.current === senha) {
       console.log("Senha repetida, ignorando fala");
       return;
     }
@@ -78,7 +83,7 @@ const PainelChamadas = () => {
       // Configura a requisição para a API REST do Google Text-to-Speech
       const requestBody = {
         input: { text: texto },
-        voice: { languageCode: 'pt-BR', name: 'pt-BR-Standard-A' },
+        voice: { languageCode: 'pt-BR', name: 'pt-BR-Chirp3-HD-Charon' },
         audioConfig: { audioEncoding: 'MP3' }
       };
       
@@ -100,17 +105,34 @@ const PainelChamadas = () => {
       // Cria um novo elemento de áudio
       const newAudioPlayer = new Audio(audioSrc);
       
+      // Inicialmente, o áudio deve ser mudo para garantir que a reprodução aconteça automaticamente
+      newAudioPlayer.muted = true;
+      
       // Configura os eventos de fim e erro
       newAudioPlayer.onended = () => {
         console.log("Fala concluída");
         setLendo(false);
         falandoRef.current = false;
         
-        // Libera o bloqueio após 2 segundos
+        // Remove a senha da lista de senhas para falar
+        const senhasAtualizadas = senhasParaFalarRef.current.filter(s => s.senha !== senha);
+        setSenhasParaFalar(senhasAtualizadas);
+        senhasParaFalarRef.current = senhasAtualizadas;
+        
+        // Libera o bloqueio após 1 segundo
         timeoutRef.current = setTimeout(() => {
           setBloqueioFala(false);
           bloqueioFalaRef.current = false;
-        }, 2000);
+          
+          // Verifica se há mais senhas para falar
+          if (senhasAtualizadas.length > 0) {
+            // Fala a próxima senha após 1 segundo
+            setTimeout(() => {
+              const proximaSenha = senhasAtualizadas[0];
+              falarSenha(proximaSenha.senha, proximaSenha.mesa, proximaSenha.servico);
+            }, 1000);
+          }
+        }, 1000);
       };
       
       newAudioPlayer.onerror = (event) => {
@@ -119,40 +141,50 @@ const PainelChamadas = () => {
         setBloqueioFala(false);
         falandoRef.current = false;
         bloqueioFalaRef.current = false;
+        
+        // Remove a senha da lista de senhas para falar mesmo em caso de erro
+        const senhasAtualizadas = senhasParaFalarRef.current.filter(s => s.senha !== senha);
+        setSenhasParaFalar(senhasAtualizadas);
+        senhasParaFalarRef.current = senhasAtualizadas;
       };
       
       // Armazena o player no estado e na ref
       setAudioPlayer(newAudioPlayer);
       audioPlayerRef.current = newAudioPlayer;
       
-      // Inicia a reprodução
-      newAudioPlayer.play();
-      
-      // Timeout de segurança para garantir que o estado seja resetado
-      timeoutRef.current = setTimeout(() => {
-        if (falandoRef.current) {
-          if (audioPlayerRef.current) {
-            audioPlayerRef.current.pause();
-            audioPlayerRef.current.currentTime = 0;
-          }
-          setLendo(false);
-          setBloqueioFala(false);
-          falandoRef.current = false;
-          bloqueioFalaRef.current = false;
-        }
-      }, 6000);
+      // Tenta iniciar a reprodução
+      newAudioPlayer.play().then(() => {
+        // Se a reprodução começar, você pode desmutar o áudio
+        newAudioPlayer.muted = false;
+      }).catch((error) => {
+        console.error("Erro ao iniciar reprodução:", error);
+        setLendo(false);
+        setBloqueioFala(false);
+        falandoRef.current = false;
+        bloqueioFalaRef.current = false;
+        
+        // Remove a senha da lista de senhas para falar mesmo em caso de erro
+        const senhasAtualizadas = senhasParaFalarRef.current.filter(s => s.senha !== senha);
+        setSenhasParaFalar(senhasAtualizadas);
+        senhasParaFalarRef.current = senhasAtualizadas;
+      });
     } catch (error) {
-      console.error("Erro ao gerar áudio:", error);
+      console.error("Erro ao gerar fala:", error);
       setLendo(false);
       setBloqueioFala(false);
       falandoRef.current = false;
       bloqueioFalaRef.current = false;
+      
+      // Remove a senha da lista de senhas para falar mesmo em caso de erro
+      const senhasAtualizadas = senhasParaFalarRef.current.filter(s => s.senha !== senha);
+      setSenhasParaFalar(senhasAtualizadas);
+      senhasParaFalarRef.current = senhasAtualizadas;
     }
   };
   
   const verificarNovasSenhas = (novosDados) => {
     const novasSenhas = {};
-    let novaSenhaParaFalar = null;
+    const novasSenhasParaFalar = [];
   
     ['mesa1', 'mesa2', 'mesa3'].forEach(mesa => {
       const senhaAtual = novosDados[mesa]?.senha;
@@ -160,14 +192,12 @@ const PainelChamadas = () => {
   
       if (senhaAtual && senhaAtual !== senhaAnterior) {
         novasSenhas[mesa] = novosDados[mesa];
-        // Apenas a primeira mudança encontrada será falada
-        if (!novaSenhaParaFalar) {
-          novaSenhaParaFalar = {
-            senha: senhaAtual,
-            mesa: mesa.replace('mesa', ''),
-            servico: novosDados[mesa].servico_nome
-          };
-        }
+        // Adiciona a nova senha à lista de senhas para falar
+        novasSenhasParaFalar.push({
+          senha: senhaAtual,
+          mesa: mesa.replace('mesa', ''),
+          servico: novosDados[mesa].servico_nome
+        });
       } else {
         novasSenhas[mesa] = ultimasSenhas[mesa];
       }
@@ -176,18 +206,50 @@ const PainelChamadas = () => {
     // Atualiza as últimas senhas chamadas
     setUltimasSenhas(novasSenhas);
   
-    // Se houver uma nova senha a ser falada e ela for diferente da última lida, então fala.
-    if (novaSenhaParaFalar && ultimaSenhaRef.current !== novaSenhaParaFalar.senha) {
-      setUltimaSenhaFalada(novaSenhaParaFalar.senha);
-      falarSenha(novaSenhaParaFalar.senha, novaSenhaParaFalar.mesa, novaSenhaParaFalar.servico);
+    // Adiciona as novas senhas à lista de senhas para falar
+    if (novasSenhasParaFalar.length > 0) {
+      // Filtra senhas que já estão na lista
+      const senhasNovas = novasSenhasParaFalar.filter(
+        novaSenha => !senhasParaFalarRef.current.some(
+          senhaExistente => senhaExistente.senha === novaSenha.senha
+        )
+      );
+      
+      if (senhasNovas.length > 0) {
+        // Atualiza a lista de senhas para falar
+        const senhasAtualizadas = [...senhasParaFalarRef.current, ...senhasNovas];
+        setSenhasParaFalar(senhasAtualizadas);
+        senhasParaFalarRef.current = senhasAtualizadas;
+        
+        // Se não estiver falando, inicia a fala da primeira senha
+        if (!falandoRef.current && !bloqueioFalaRef.current) {
+          falarSenha(senhasNovas[0].senha, senhasNovas[0].mesa, senhasNovas[0].servico);
+        }
+      }
     }
   };
 
   const fetchDadosPainel = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/atendimentos/painel_chamadas/');
-      setDadosPainel(response.data); // Atualiza os dados do painel
-      verificarNovasSenhas(response.data); // Verifica novas senhas
+      const response = await axios.get(API_ENDPOINTS.PAINEL_CHAMADAS);
+      
+      // Verifica se há mudanças nos dados antes de atualizar
+      const dadosAtuais = response.data;
+      const dadosAnteriores = dadosPainel;
+      
+      // Verifica se há mudanças nas senhas chamadas
+      const mudancasSenhas = 
+        dadosAtuais.mesa1?.senha !== dadosAnteriores.mesa1?.senha ||
+        dadosAtuais.mesa2?.senha !== dadosAnteriores.mesa2?.senha ||
+        dadosAtuais.mesa3?.senha !== dadosAnteriores.mesa3?.senha;
+      
+      // Atualiza os dados do painel
+      setDadosPainel(dadosAtuais);
+      
+      // Verifica novas senhas apenas se houver mudanças
+      if (mudancasSenhas) {
+        verificarNovasSenhas(dadosAtuais);
+      }
     } catch (error) {
       console.error("Erro ao buscar dados do painel:", error); // Log de erro
     }
@@ -200,11 +262,44 @@ const PainelChamadas = () => {
     tempoUltimaFalaRef.current = tempoUltimaFala;
     bloqueioFalaRef.current = bloqueioFala;
     audioPlayerRef.current = audioPlayer;
+    senhasParaFalarRef.current = senhasParaFalar;
     
-    fetchDadosPainel(); // Chama a função ao montar o componente
-    const interval = setInterval(fetchDadosPainel, 3000); // Atualiza os dados a cada 3 segundos
+    // Função para verificar se o navegador suporta autoplay
+    const verificarAutoplay = async () => {
+      try {
+        // Tenta reproduzir um áudio mudo para verificar se o autoplay é permitido
+        const audio = new Audio();
+        audio.muted = true;
+        await audio.play();
+        audio.pause();
+        audio.currentTime = 0;
+        
+        // Se chegou aqui, o autoplay é permitido
+        setAutoplayPermitido(true);
+      } catch (error) {
+        // Se houve erro, o autoplay não é permitido
+        console.error("Autoplay não permitido:", error);
+        setAutoplayPermitido(false);
+      }
+    };
+    
+    // Verifica se o autoplay é permitido
+    verificarAutoplay();
+    
+    // Chama a função ao montar o componente
+    fetchDadosPainel();
+    
+    // Atualiza os dados a cada 3 segundos
+    const interval = setInterval(() => {
+      // Só atualiza se não estiver falando e não estiver bloqueado
+      if (!falandoRef.current && !bloqueioFalaRef.current) {
+        fetchDadosPainel();
+      }
+    }, 3000);
+    
+    // Limpa o intervalo ao desmontar
     return () => {
-      clearInterval(interval); // Limpa o intervalo ao desmontar
+      clearInterval(interval);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -408,7 +503,7 @@ const PainelChamadas = () => {
                           }
                         />
                       </ListItem>
-                      {index < dadosPainel.historico.length - 1 && <Divider />} // Divide os itens da lista
+                      {index < dadosPainel.historico.length - 1 && <Divider />} 
                     </React.Fragment>
                   ))
                 ) : (

@@ -46,6 +46,14 @@ const SelecionarMesa = () => {
           >
             Mesa 2
           </Button>
+          <Button
+            variant={mesaSelecionada === "3" ? "contained" : "outlined"} // Define o estilo do botão com base na mesa selecionada
+            color={mesaSelecionada === "3" ? "primary" : "default"}
+            onClick={() => selecionarMesa("3")} // Chama a função para selecionar a mesa 3
+            sx={{ fontSize: 18, width: 150, padding: 2 }}
+          >
+            Mesa 3
+          </Button>
         </Box>
       </Paper>
     </Box>

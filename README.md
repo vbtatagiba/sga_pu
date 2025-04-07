@@ -30,7 +30,7 @@ docker-compose up --build
 
 3. Acesse o sistema:
 - Frontend: http://localhost:3000
-- Backend: http://localhost:8000
+- Backend: http://10.1.218.112:8000
 - MySQL: localhost:3306
 
 ## Estrutura do Projeto
