@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Paper, Typography, Grid, List, ListItem, ListItemText, Divider, Container } from '@mui/material';
 import axios from 'axios';
+import { API_KEYS } from '../config/api-keys';
 
 const PainelChamadas = () => {
   const [dadosPainel, setDadosPainel] = useState({
@@ -20,65 +21,135 @@ const PainelChamadas = () => {
   const [ultimaSenhaFalada, setUltimaSenhaFalada] = useState(null); // Estado para controlar a última senha falada
   const [tempoUltimaFala, setTempoUltimaFala] = useState(0); // Estado para controlar o tempo da última fala
   const [bloqueioFala, setBloqueioFala] = useState(false); // Estado para bloquear a fala temporariamente
-  const speechSynthesis = window.speechSynthesis; // API de síntese de fala
+  const [audioPlayer, setAudioPlayer] = useState(null); // Estado para armazenar o player de áudio
+  
+  // Referências para controlar o estado da fala
+  const falandoRef = useRef(false);
+  const ultimaSenhaRef = useRef(null);
+  const tempoUltimaFalaRef = useRef(0);
+  const bloqueioFalaRef = useRef(false);
+  const audioPlayerRef = useRef(null);
+  const timeoutRef = useRef(null);
 
-  const falarSenha = (senha, mesa, servico) => {
-    // Verifica se já está lendo ou se está bloqueado
-    if (lendo || bloqueioFala) return;
+  // Chave da API do Google Cloud
+  const API_KEY = API_KEYS.GOOGLE_CLOUD_API_KEY;
+  
+  const falarSenha = async (senha, mesa, servico) => {
+    // Verifica se já está lendo ou se está bloqueado usando as refs
+    if (falandoRef.current || bloqueioFalaRef.current) {
+      console.log("Já está falando ou bloqueado, ignorando nova fala");
+      return;
+    }
     
     // Verifica se a senha é a mesma da última falada e se passou menos de 5 segundos
     const agora = Date.now();
-    if (ultimaSenhaFalada === senha && agora - tempoUltimaFala < 5000) {
+    if (ultimaSenhaRef.current === senha && agora - tempoUltimaFalaRef.current < 5000) {
       console.log("Senha repetida, ignorando fala");
       return;
     }
     
-    // Cancela qualquer fala anterior
-    speechSynthesis.cancel();
+    // Cancela qualquer áudio anterior
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.currentTime = 0;
+    }
+    
+    // Cancela qualquer timeout pendente
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     
     const texto = `Senha ${senha}, Mesa ${mesa}, Serviço ${servico}`;
-    const utterance = new SpeechSynthesisUtterance(texto);
-    utterance.lang = 'pt-BR';
-    utterance.rate = 1.0;
-    utterance.pitch = 1;
     
-    // Atualiza os estados antes de falar
-    setLendo(true);
-    setUltimaSenhaFalada(senha);
-    setTempoUltimaFala(agora);
-    setBloqueioFala(true);
-    
-    // Configura os eventos de fim e erro
-    utterance.onend = () => {
-      console.log("Fala concluída");
-      setLendo(false);
-      // Libera o bloqueio após 2 segundos
-      setTimeout(() => {
-        setBloqueioFala(false);
-      }, 2000);
-    };
-    
-    utterance.onerror = (event) => {
-      console.error("Erro na fala:", event);
-      setLendo(false);
-      setBloqueioFala(false);
-    };
-    
-    // Inicia a fala
-    speechSynthesis.speak(utterance);
-    
-    // Timeout de segurança para garantir que o estado seja resetado
-    setTimeout(() => {
-      if (lendo) {
-        speechSynthesis.cancel();
+    try {
+      // Atualiza os estados antes de falar
+      setLendo(true);
+      setUltimaSenhaFalada(senha);
+      setTempoUltimaFala(agora);
+      setBloqueioFala(true);
+      
+      // Atualiza as refs
+      falandoRef.current = true;
+      ultimaSenhaRef.current = senha;
+      tempoUltimaFalaRef.current = agora;
+      bloqueioFalaRef.current = true;
+      
+      // Configura a requisição para a API REST do Google Text-to-Speech
+      const requestBody = {
+        input: { text: texto },
+        voice: { languageCode: 'pt-BR', name: 'pt-BR-Standard-A' },
+        audioConfig: { audioEncoding: 'MP3' }
+      };
+      
+      // Faz a requisição para a API REST
+      const response = await axios.post(
+        `https://texttospeech.googleapis.com/v1/text:synthesize?key=${API_KEY}`,
+        requestBody,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      // Converte o áudio para um formato que pode ser reproduzido
+      const audioContent = response.data.audioContent;
+      const audioSrc = `data:audio/mp3;base64,${audioContent}`;
+      
+      // Cria um novo elemento de áudio
+      const newAudioPlayer = new Audio(audioSrc);
+      
+      // Configura os eventos de fim e erro
+      newAudioPlayer.onended = () => {
+        console.log("Fala concluída");
+        setLendo(false);
+        falandoRef.current = false;
+        
+        // Libera o bloqueio após 2 segundos
+        timeoutRef.current = setTimeout(() => {
+          setBloqueioFala(false);
+          bloqueioFalaRef.current = false;
+        }, 2000);
+      };
+      
+      newAudioPlayer.onerror = (event) => {
+        console.error("Erro na fala:", event);
         setLendo(false);
         setBloqueioFala(false);
-      }
-    }, 5000);
+        falandoRef.current = false;
+        bloqueioFalaRef.current = false;
+      };
+      
+      // Armazena o player no estado e na ref
+      setAudioPlayer(newAudioPlayer);
+      audioPlayerRef.current = newAudioPlayer;
+      
+      // Inicia a reprodução
+      newAudioPlayer.play();
+      
+      // Timeout de segurança para garantir que o estado seja resetado
+      timeoutRef.current = setTimeout(() => {
+        if (falandoRef.current) {
+          if (audioPlayerRef.current) {
+            audioPlayerRef.current.pause();
+            audioPlayerRef.current.currentTime = 0;
+          }
+          setLendo(false);
+          setBloqueioFala(false);
+          falandoRef.current = false;
+          bloqueioFalaRef.current = false;
+        }
+      }, 6000);
+    } catch (error) {
+      console.error("Erro ao gerar áudio:", error);
+      setLendo(false);
+      setBloqueioFala(false);
+      falandoRef.current = false;
+      bloqueioFalaRef.current = false;
+    }
   };
   
-  
-
   const verificarNovasSenhas = (novosDados) => {
     const novasSenhas = {};
     let novaSenhaParaFalar = null;
@@ -106,7 +177,7 @@ const PainelChamadas = () => {
     setUltimasSenhas(novasSenhas);
   
     // Se houver uma nova senha a ser falada e ela for diferente da última lida, então fala.
-    if (novaSenhaParaFalar && ultimaSenhaFalada !== novaSenhaParaFalar.senha) {
+    if (novaSenhaParaFalar && ultimaSenhaRef.current !== novaSenhaParaFalar.senha) {
       setUltimaSenhaFalada(novaSenhaParaFalar.senha);
       falarSenha(novaSenhaParaFalar.senha, novaSenhaParaFalar.mesa, novaSenhaParaFalar.servico);
     }
@@ -123,11 +194,24 @@ const PainelChamadas = () => {
   };
 
   useEffect(() => {
+    // Inicializa as refs com os valores iniciais
+    falandoRef.current = lendo;
+    ultimaSenhaRef.current = ultimaSenhaFalada;
+    tempoUltimaFalaRef.current = tempoUltimaFala;
+    bloqueioFalaRef.current = bloqueioFala;
+    audioPlayerRef.current = audioPlayer;
+    
     fetchDadosPainel(); // Chama a função ao montar o componente
     const interval = setInterval(fetchDadosPainel, 3000); // Atualiza os dados a cada 3 segundos
     return () => {
       clearInterval(interval); // Limpa o intervalo ao desmontar
-      speechSynthesis.cancel(); // Cancela a fala ao desmontar
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current.currentTime = 0;
+      }
     };
   }, []);
 

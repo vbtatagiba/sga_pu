@@ -84,9 +84,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'sga_db',
-        'USER': 'sga_user',
-        'PASSWORD': 'sga_password',
-        'HOST': 'db',  # Nome do serviço no docker-compose
+        'USER': 'root',
+        'PASSWORD': '12345678',
+        'HOST': '127.0.0.1',  # Nome do serviço no docker-compose
         'PORT': '3306',
     }
 }
