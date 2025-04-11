@@ -1,2 +1,2 @@
-1° Acabar de corrigir o bug de loop da fala da senha
+1° Acabar de corrigir o bug de loop da fala da senha -> Descobri que o bug se da devido a reincremetação da senha fala durante o atendimento
 2° corrigir o dashboard admin para possibilitar a exclusão de dados do banco alem de possibilitar a exportação dos dados

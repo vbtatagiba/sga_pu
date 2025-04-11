@@ -6,6 +6,8 @@ import DashboardChamadas from './pages/PainelChamadas';
 import Chamador from './pages/Chamador';
 import TotemAtendimento from './pages/TotemAtendimento';
 import SelecionarMesa from './pages/SelecionarMesa';
+import Header from './components/Header';
+import { Box } from '@mui/material';
 
 const ProtectedRoute = ({ children }) => {
   const location = useLocation();
@@ -23,20 +25,23 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <Router>
-        <Routes>
-          <Route path="/selecionar-mesa" element={<SelecionarMesa />} />
-          <Route path="/painel-chamadas" element={<DashboardChamadas />} />
-          <Route path="/totem-atendimento" element={<TotemAtendimento />} />
-          <Route
-            path="/chamador"
-            element={
-              <ProtectedRoute>
-                <Chamador />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/selecionar-mesa" replace />} />
-        </Routes>
+        <Header />
+        <Box sx={{ mt: 2, px: 2 }}>
+          <Routes>
+            <Route path="/selecionar-mesa" element={<SelecionarMesa />} />
+            <Route path="/painel-chamadas" element={<DashboardChamadas />} />
+            <Route path="/totem-atendimento" element={<TotemAtendimento />} />
+            <Route
+              path="/chamador"
+              element={
+                <ProtectedRoute>
+                  <Chamador />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/selecionar-mesa" replace />} />
+          </Routes>
+        </Box>
       </Router>
     </ThemeProvider>
   );

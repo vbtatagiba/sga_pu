@@ -3,21 +3,21 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#003366', // Azul escuro do site de referência
-      light: '#336699',
-      dark: '#002244',
+      main: '#221F77', // Azul escuro da logo
+      light: '#32247B', // Azul roxo da logo
+      dark: '#1A1755',
     },
     secondary: {
-      main: '#009933', // Verde do site de referência
-      light: '#33cc66',
-      dark: '#006622',
+      main: '#8C1A3B', // Vermelho vinho da logo
+      light: '#A32B4B',
+      dark: '#6D142D',
     },
     background: {
-      default: '#f0f0f0',
+      default: '#f8f9fa',
       paper: '#ffffff',
     },
     text: {
-      primary: '#333333',
+      primary: '#221F77',
       secondary: '#666666',
     },
   },
@@ -25,17 +25,17 @@ const theme = createTheme({
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     h4: {
       fontWeight: 700,
-      color: '#003366',
+      color: '#221F77',
       textTransform: 'uppercase',
       letterSpacing: '1px',
     },
     h5: {
       fontWeight: 600,
-      color: '#009933',
+      color: '#8C1A3B',
     },
     h6: {
       fontWeight: 600,
-      color: '#333333',
+      color: '#221F77',
     },
   },
   components: {
@@ -43,7 +43,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
-          boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+          boxShadow: '0 4px 8px rgba(34, 31, 119, 0.1)',
         },
       },
     },

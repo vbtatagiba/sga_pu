@@ -1,230 +1,129 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Paper, Typography, Grid, List, ListItem, ListItemText, Divider, Container } from '@mui/material';
+import { Box, Paper, Typography, Grid, List, ListItem, ListItemText, Divider, Container, img} from '@mui/material';
 import axios from 'axios';
 import { API_KEYS } from '../config/api-keys';
 import API_ENDPOINTS from '../config/api';
+import PropTypes from 'prop-types';
+
+// Schema de validação
+const MesaSchema = {
+  senha: PropTypes.string,
+  servico_nome: PropTypes.string
+};
+
+const validateMesaData = (data) => {
+  if (!data) return null;
+  return {
+    senha: data.senha || null,
+    servico_nome: data.servico_nome || 'Serviço não especificado'
+  };
+};
 
 const PainelChamadas = () => {
   const [dadosPainel, setDadosPainel] = useState({
     mesa1: null,
     mesa2: null,
     mesa3: null,
-    historico: [] // Estado para armazenar dados do painel
+    historico: []
   });
 
-  const [ultimasSenhas, setUltimasSenhas] = useState({
-    mesa1: null,
-    mesa2: null,
-    mesa3: null // Estado para armazenar as últimas senhas chamadas
-  });
-
-  const [lendo, setLendo] = useState(false); // Estado para controlar a leitura de senhas
-  const [ultimaSenhaFalada, setUltimaSenhaFalada] = useState(null); // Estado para controlar a última senha falada
-  const [tempoUltimaFala, setTempoUltimaFala] = useState(0); // Estado para controlar o tempo da última fala
-  const [bloqueioFala, setBloqueioFala] = useState(false); // Estado para bloquear a fala temporariamente
-  const [audioPlayer, setAudioPlayer] = useState(null); // Estado para armazenar o player de áudio
-  const [autoplayPermitido, setAutoplayPermitido] = useState(false); // Estado para controlar se o autoplay é permitido
-  const [senhasParaFalar, setSenhasParaFalar] = useState([]); // Lista de senhas a serem faladas
+  const [lendo, setLendo] = useState(false);
+  const [autoplayPermitido, setAutoplayPermitido] = useState(false);
+  const [senhasParaFalar, setSenhasParaFalar] = useState([]);
   
   // Referências para controlar o estado da fala
   const falandoRef = useRef(false);
-  const ultimaSenhaRef = useRef(null);
-  const tempoUltimaFalaRef = useRef(0);
-  const bloqueioFalaRef = useRef(false);
+  const senhasParaFalarRef = useRef([]);
   const audioPlayerRef = useRef(null);
-  const timeoutRef = useRef(null);
-  const senhasParaFalarRef = useRef([]); // Referência para a lista de senhas a serem faladas
+
+  const [horaAtual, setHoraAtual] = useState(new Date());
 
   // Chave da API do Google Cloud
   const API_KEY = API_KEYS.GOOGLE_CLOUD_API_KEY;
   
   const falarSenha = async (senha, mesa, servico) => {
-    const agora = new Date();
-    
-    // Verifica se já está falando ou se está bloqueado
-    if (falandoRef.current || bloqueioFalaRef.current) {
-      console.log("Já está falando ou bloqueado, ignorando nova fala");
-      return;
-    }
-    
-    // Verifica se a senha é a mesma da última falada
-    if (ultimaSenhaRef.current === senha) {
-      console.log("Senha repetida, ignorando fala");
-      return;
-    }
-    
-    // Cancela qualquer áudio anterior
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.pause();
-      audioPlayerRef.current.currentTime = 0;
-    }
-    
-    // Cancela qualquer timeout pendente
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
+    if (!senha) return;
     
     const texto = `Senha ${senha}, Mesa ${mesa}, Serviço ${servico}`;
     
     try {
-      // Atualiza os estados antes de falar
-      setLendo(true);
-      setUltimaSenhaFalada(senha);
-      setTempoUltimaFala(agora);
-      setBloqueioFala(true);
-      
-      // Atualiza as refs
-      falandoRef.current = true;
-      ultimaSenhaRef.current = senha;
-      tempoUltimaFalaRef.current = agora;
-      bloqueioFalaRef.current = true;
-      
-      // Configura a requisição para a API REST do Google Text-to-Speech
-      const requestBody = {
-        input: { text: texto },
-        voice: { languageCode: 'pt-BR', name: 'pt-BR-Chirp3-HD-Charon' },
-        audioConfig: { audioEncoding: 'MP3' }
-      };
-      
-      // Faz a requisição para a API REST
       const response = await axios.post(
         `https://texttospeech.googleapis.com/v1/text:synthesize?key=${API_KEY}`,
-        requestBody,
         {
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          input: { text: texto },
+          voice: { languageCode: 'pt-BR', name: 'pt-BR-Wavenet-B' },
+          audioConfig: { audioEncoding: 'MP3' }
         }
       );
+
+      const audio = new Audio(`data:audio/mp3;base64,${response.data.audioContent}`);
+      audio.muted = !autoplayPermitido;
       
-      // Converte o áudio para um formato que pode ser reproduzido
-      const audioContent = response.data.audioContent;
-      const audioSrc = `data:audio/mp3;base64,${audioContent}`;
-      
-      // Cria um novo elemento de áudio
-      const newAudioPlayer = new Audio(audioSrc);
-      
-      // Inicialmente, o áudio deve ser mudo para garantir que a reprodução aconteça automaticamente
-      newAudioPlayer.muted = true;
-      
-      // Configura os eventos de fim e erro
-      newAudioPlayer.onended = () => {
-        console.log("Fala concluída");
-        setLendo(false);
-        falandoRef.current = false;
-        
-        // Remove a senha da lista de senhas para falar
-        const senhasAtualizadas = senhasParaFalarRef.current.filter(s => s.senha !== senha);
-        setSenhasParaFalar(senhasAtualizadas);
-        senhasParaFalarRef.current = senhasAtualizadas;
-        
-        // Libera o bloqueio após 1 segundo
-        timeoutRef.current = setTimeout(() => {
-          setBloqueioFala(false);
-          bloqueioFalaRef.current = false;
-          
-          // Verifica se há mais senhas para falar
-          if (senhasAtualizadas.length > 0) {
-            // Fala a próxima senha após 1 segundo
-            setTimeout(() => {
-              const proximaSenha = senhasAtualizadas[0];
-              falarSenha(proximaSenha.senha, proximaSenha.mesa, proximaSenha.servico);
-            }, 1000);
-          }
-        }, 1000);
-      };
-      
-      newAudioPlayer.onerror = (event) => {
-        console.error("Erro na fala:", event);
-        setLendo(false);
-        setBloqueioFala(false);
-        falandoRef.current = false;
-        bloqueioFalaRef.current = false;
-        
-        // Remove a senha da lista de senhas para falar mesmo em caso de erro
-        const senhasAtualizadas = senhasParaFalarRef.current.filter(s => s.senha !== senha);
-        setSenhasParaFalar(senhasAtualizadas);
-        senhasParaFalarRef.current = senhasAtualizadas;
-      };
-      
-      // Armazena o player no estado e na ref
-      setAudioPlayer(newAudioPlayer);
-      audioPlayerRef.current = newAudioPlayer;
-      
-      // Tenta iniciar a reprodução
-      newAudioPlayer.play().then(() => {
-        // Se a reprodução começar, você pode desmutar o áudio
-        newAudioPlayer.muted = false;
-      }).catch((error) => {
-        console.error("Erro ao iniciar reprodução:", error);
-        setLendo(false);
-        setBloqueioFala(false);
-        falandoRef.current = false;
-        bloqueioFalaRef.current = false;
-        
-        // Remove a senha da lista de senhas para falar mesmo em caso de erro
-        const senhasAtualizadas = senhasParaFalarRef.current.filter(s => s.senha !== senha);
-        setSenhasParaFalar(senhasAtualizadas);
-        senhasParaFalarRef.current = senhasAtualizadas;
+      await audio.play();
+      audio.muted = false;
+
+      return new Promise(resolve => {
+        audio.onended = resolve;
+        audio.onerror = resolve;
       });
+
     } catch (error) {
-      console.error("Erro ao gerar fala:", error);
-      setLendo(false);
-      setBloqueioFala(false);
-      falandoRef.current = false;
-      bloqueioFalaRef.current = false;
-      
-      // Remove a senha da lista de senhas para falar mesmo em caso de erro
-      const senhasAtualizadas = senhasParaFalarRef.current.filter(s => s.senha !== senha);
-      setSenhasParaFalar(senhasAtualizadas);
-      senhasParaFalarRef.current = senhasAtualizadas;
+      console.error("Erro na síntese de fala:", error);
+      return Promise.resolve();
     }
+  };
+
+  const processarFila = async () => {
+    if (senhasParaFalarRef.current.length === 0 || falandoRef.current) return;
+
+    falandoRef.current = true;
+    setLendo(true);
+
+    while (senhasParaFalarRef.current.length > 0) {
+      const proximaSenha = senhasParaFalarRef.current[0];
+      
+      await new Promise(resolve => {
+        falarSenha(proximaSenha.senha, proximaSenha.mesa, proximaSenha.servico)
+          .finally(() => {
+            // Remove a senha processada da fila
+            senhasParaFalarRef.current = senhasParaFalarRef.current.slice(1);
+            setSenhasParaFalar(senhasParaFalarRef.current);
+            resolve();
+          });
+      });
+
+      // Intervalo entre senhas
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    falandoRef.current = false;
+    setLendo(false);
   };
   
   const verificarNovasSenhas = (novosDados) => {
-    const novasSenhas = {};
     const novasSenhasParaFalar = [];
   
     ['mesa1', 'mesa2', 'mesa3'].forEach(mesa => {
-      const senhaAtual = novosDados[mesa]?.senha;
-      const senhaAnterior = ultimasSenhas[mesa]?.senha;
+      const dadosMesa = novosDados[mesa] || {};
+      const senhaAtual = dadosMesa.senha;
+      const senhaAnterior = (dadosPainel[mesa] || {}).senha;
   
       if (senhaAtual && senhaAtual !== senhaAnterior) {
-        novasSenhas[mesa] = novosDados[mesa];
-        // Adiciona a nova senha à lista de senhas para falar
         novasSenhasParaFalar.push({
           senha: senhaAtual,
           mesa: mesa.replace('mesa', ''),
-          servico: novosDados[mesa].servico_nome
+          servico: dadosMesa.servico_nome || 'Serviço Geral'
         });
-      } else {
-        novasSenhas[mesa] = ultimasSenhas[mesa];
       }
     });
   
-    // Atualiza as últimas senhas chamadas
-    setUltimasSenhas(novasSenhas);
-  
-    // Adiciona as novas senhas à lista de senhas para falar
     if (novasSenhasParaFalar.length > 0) {
-      // Filtra senhas que já estão na lista
-      const senhasNovas = novasSenhasParaFalar.filter(
-        novaSenha => !senhasParaFalarRef.current.some(
-          senhaExistente => senhaExistente.senha === novaSenha.senha
-        )
-      );
+      const novaFila = [...senhasParaFalarRef.current, ...novasSenhasParaFalar];
+      setSenhasParaFalar(novaFila);
+      senhasParaFalarRef.current = novaFila;
       
-      if (senhasNovas.length > 0) {
-        // Atualiza a lista de senhas para falar
-        const senhasAtualizadas = [...senhasParaFalarRef.current, ...senhasNovas];
-        setSenhasParaFalar(senhasAtualizadas);
-        senhasParaFalarRef.current = senhasAtualizadas;
-        
-        // Se não estiver falando, inicia a fala da primeira senha
-        if (!falandoRef.current && !bloqueioFalaRef.current) {
-          falarSenha(senhasNovas[0].senha, senhasNovas[0].mesa, senhasNovas[0].servico);
-        }
+      if (!falandoRef.current) {
+        processarFila();
       }
     }
   };
@@ -233,91 +132,98 @@ const PainelChamadas = () => {
     try {
       const response = await axios.get(API_ENDPOINTS.PAINEL_CHAMADAS);
       
-      // Verifica se há mudanças nos dados antes de atualizar
-      const dadosAtuais = response.data;
-      const dadosAnteriores = dadosPainel;
-      
-      // Verifica se há mudanças nas senhas chamadas
-      const mudancasSenhas = 
-        dadosAtuais.mesa1?.senha !== dadosAnteriores.mesa1?.senha ||
-        dadosAtuais.mesa2?.senha !== dadosAnteriores.mesa2?.senha ||
-        dadosAtuais.mesa3?.senha !== dadosAnteriores.mesa3?.senha;
-      
-      // Atualiza os dados do painel
-      setDadosPainel(dadosAtuais);
-      
-      // Verifica novas senhas apenas se houver mudanças
-      if (mudancasSenhas) {
-        verificarNovasSenhas(dadosAtuais);
+      if (!response?.data || typeof response.data !== 'object') {
+        console.error("Resposta inválida da API:", response);
+        return;
       }
+
+      const dadosBrutos = response.data;
+      const dadosValidados = {
+        mesa1: validateMesaData(dadosBrutos.mesa1),
+        mesa2: validateMesaData(dadosBrutos.mesa2),
+        mesa3: validateMesaData(dadosBrutos.mesa3),
+        historico: Array.isArray(dadosBrutos.historico) 
+          ? dadosBrutos.historico.filter(item => 
+              item?.id && item?.senha && item?.mesa && item?.servico_nome
+            )
+          : []
+      };
+
+      setDadosPainel(dadosValidados);
+      verificarNovasSenhas(dadosValidados);
     } catch (error) {
-      console.error("Erro ao buscar dados do painel:", error); // Log de erro
+      console.error("Erro ao buscar dados do painel:", error);
     }
   };
 
   useEffect(() => {
-    // Inicializa as refs com os valores iniciais
-    falandoRef.current = lendo;
-    ultimaSenhaRef.current = ultimaSenhaFalada;
-    tempoUltimaFalaRef.current = tempoUltimaFala;
-    bloqueioFalaRef.current = bloqueioFala;
-    audioPlayerRef.current = audioPlayer;
-    senhasParaFalarRef.current = senhasParaFalar;
-    
-    // Função para verificar se o navegador suporta autoplay
     const verificarAutoplay = async () => {
       try {
-        // Tenta reproduzir um áudio mudo para verificar se o autoplay é permitido
         const audio = new Audio();
         audio.muted = true;
         await audio.play();
         audio.pause();
-        audio.currentTime = 0;
-        
-        // Se chegou aqui, o autoplay é permitido
         setAutoplayPermitido(true);
       } catch (error) {
-        // Se houve erro, o autoplay não é permitido
-        console.error("Autoplay não permitido:", error);
-        setAutoplayPermitido(false);
+        console.log("Autoplay bloqueado, aguardando interação");
       }
     };
     
-    // Verifica se o autoplay é permitido
-    verificarAutoplay();
+    const fetchInterval = setInterval(fetchDadosPainel, 3000);
+    const relogioInterval = setInterval(() => setHoraAtual(new Date()), 1000);
     
-    // Chama a função ao montar o componente
+    verificarAutoplay();
     fetchDadosPainel();
     
-    // Atualiza os dados a cada 3 segundos
-    const interval = setInterval(() => {
-      // Só atualiza se não estiver falando e não estiver bloqueado
-      if (!falandoRef.current && !bloqueioFalaRef.current) {
-        fetchDadosPainel();
-      }
-    }, 3000);
-    
-    // Limpa o intervalo ao desmontar
     return () => {
-      clearInterval(interval);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      clearInterval(fetchInterval);
+      clearInterval(relogioInterval);
       if (audioPlayerRef.current) {
         audioPlayerRef.current.pause();
-        audioPlayerRef.current.currentTime = 0;
       }
     };
   }, []);
 
   return (
-    <Box sx={{ 
+    <Box 
+      onClick={() => {
+        if (!autoplayPermitido) {
+          const audio = new Audio();
+          audio.muted = true;
+          audio.play()
+            .then(() => {
+              audio.pause();
+              setAutoplayPermitido(true);
+            })
+            .catch(error => console.error("Erro ao destravar autoplay:", error));
+        }
+      }}
+      sx={{ 
       padding: 3, 
       backgroundColor: 'background.default', 
       minHeight: '100vh',
-      backgroundImage: 'linear-gradient(to bottom, #f0f0f0, #e0e0e0)' // Estilo de fundo
-    }}>
-      <Container maxWidth="lg">
+      backgroundImage: 'linear-gradient(to bottom, #f0f0f0, #e0e0e0)',
+      display: 'flex',
+        justifyContent: 'center',
+        cursor: 'pointer'
+      }}
+    >
+      <Container maxWidth="lg" sx={{ width: '100%' }}>
+        {/* Componente de debug da fila */}
+        <Box sx={{ position: 'fixed', top: 10, right: 10, bgcolor: 'rgba(0,0,0,0.7)', color: 'white', p: 2 }}>
+          <Typography variant="subtitle2">Fila de Atendimento</Typography>
+          <List dense>
+            {senhasParaFalar.map((senha, index) => (
+              <ListItem key={index}>
+                <ListItemText 
+                  primary={`${senha.senha} - Mesa ${senha.mesa}`}
+                  secondary={senha.servico}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -337,6 +243,17 @@ const PainelChamadas = () => {
           >
             Painel de Chamadas
           </Typography>
+          <Typography 
+            variant="h2" 
+            sx={{ 
+              color: 'primary.main',
+              paddingLeft: "-200  px",
+              fontWeight: 'bold',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.1)'
+            }}
+          >
+            {horaAtual.toLocaleTimeString('pt-BR')}
+          </Typography>
         </Box>
 
         <Grid container spacing={3}>
@@ -346,7 +263,7 @@ const PainelChamadas = () => {
               sx={{ 
                 padding: 3, 
                 textAlign: 'center',
-                background: 'linear-gradient(135deg, #003366, #002244)',
+                background: 'linear-gradient(135deg,rgb(97, 166, 235), #002244)',
                 color: '#ffffff',
                 height: '200px',
                 display: 'flex',
@@ -422,7 +339,7 @@ const PainelChamadas = () => {
               sx={{ 
                 padding: 3, 
                 textAlign: 'center',
-                background: 'linear-gradient(135deg, #336699, #002244)',
+                background: 'linear-gradient(135deg,rgb(140, 26, 59),rgb(44, 5, 5))',
                 color: '#ffffff',
                 height: '200px',
                 display: 'flex',
@@ -457,68 +374,79 @@ const PainelChamadas = () => {
           </Grid>
 
           {/* Histórico de chamadas */}
-          <Grid item xs={12}>
-            <Paper 
-              sx={{ 
-                padding: 3, 
-                mt: 4,
-                background: 'linear-gradient(to right, #ffffff, #f9f9f9)',
-                boxShadow: '0 6px 12px rgba(0,0,0,0.1)'
-              }}
-            >
-              <Typography 
-                variant="h5" 
-                gutterBottom 
+          <Grid item xs={12}sx={{ 
+              display: 'flex', 
+              justifyContent: 'center',
+              alignItems: 'center', // Centraliza verticalmente
+              width: '100%',
+              minHeight: '50vh' // Ajuda na centralização vertical
+            }}>
+            
+              <Paper 
                 sx={{ 
-                  color: 'primary.main',
-                  fontWeight: 'bold',
-                  borderBottom: '2px solid',
-                  borderColor: 'primary.main',
-                  paddingBottom: 1,
-                  mb: 2
+                  padding: 3, 
+                  mt: 4,
+                  width: '100%',
+                  maxWidth: '800px',
+                  background: 'linear-gradient(to right, #ffffff, #f9f9f9)',
+                  boxShadow: '0 6px 12px rgba(0,0,0,0.1)',
+                  margin: 'auto' // Ajuda na centralização
                 }}
               >
-                Histórico de Atendimentos Finalizados
-              </Typography>
-              <List>
-                {dadosPainel.historico.length > 0 ? (
-                  dadosPainel.historico.map((atendimento, index) => (
-                    <React.Fragment key={atendimento.id}>
-                      <ListItem sx={{ 
-                        py: 1.5,
-                        '&:hover': {
-                          backgroundColor: 'rgba(0, 51, 102, 0.05)' // Efeito de hover
+                <Typography 
+                  variant="h5" 
+                  gutterBottom 
+                  sx={{ 
+                    color: 'primary.main',
+                    fontWeight: 'bold',
+                    borderBottom: '2px solid',
+                    borderColor: 'primary.main',
+                    paddingBottom: 1,
+                    mb: 2,
+                    textAlign: 'center'
+                  }}
+                >
+                  Histórico de Atendimentos Finalizados
+                </Typography>
+                <List>
+                  {dadosPainel.historico.length > 0 ? (
+                    dadosPainel.historico.map((atendimento, index) => (
+                      <React.Fragment key={atendimento.id}>
+                        <ListItem sx={{ 
+                          py: 1.5,
+                          '&:hover': {
+                            backgroundColor: 'rgba(0, 51, 102, 0.05)'
+                          }
+                        }}>
+                          <ListItemText
+                            primary={
+                              <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 'bold', textAlign: 'center' }}>
+                                Senha: {atendimento.senha}
+                              </Typography>
+                            }
+                            secondary={
+                              <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                                Mesa: {atendimento.mesa} | Serviço: {atendimento.servico_nome}
+                              </Typography>
+                            }
+                          />
+                        </ListItem>
+                        {index < dadosPainel.historico.length - 1 && <Divider />} 
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <ListItem>
+                      <ListItemText
+                        primary={
+                          <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                            Nenhum atendimento finalizado ainda
+                          </Typography>
                         }
-                      }}>
-                        <ListItemText
-                          primary={
-                            <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                              Senha: {atendimento.senha}
-                            </Typography>
-                          }
-                          secondary={
-                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                              Mesa: {atendimento.mesa} | Serviço: {atendimento.servico_nome}
-                            </Typography>
-                          }
-                        />
-                      </ListItem>
-                      {index < dadosPainel.historico.length - 1 && <Divider />} 
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <ListItem>
-                    <ListItemText
-                      primary={
-                        <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'center' }}>
-                          Nenhum atendimento finalizado ainda {/* Mensagem padrão se não houver atendimentos*/}
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
-                )}
-              </List>
-            </Paper>
+                      />
+                    </ListItem>
+                  )}
+                </List>
+              </Paper>
           </Grid>
         </Grid>
       </Container>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Button, Typography, Paper, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Container, Button, Typography, Paper, Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
 import axios from 'axios';
 import API_ENDPOINTS from '../config/api';
 
@@ -59,9 +59,14 @@ const TotemAtendimento = () => {
           Gerar Senha
         </Button>
         {senhaGerada && (
-          <Typography variant="h5" sx={{ marginTop: 2 }}>
-            Sua senha: <strong>{senhaGerada}</strong>
-          </Typography>
+          <Box>
+            <Typography variant="h5" sx={{ marginTop: 2 }}>
+              Sua senha: <strong>{senhaGerada}</strong> 
+            </Typography>
+            <Typography variant="h5" sx={{ marginTop: 2 }}>
+              Tire uma foto!
+            </Typography>
+          </Box>
         )}
       </Paper>
     </Container>
