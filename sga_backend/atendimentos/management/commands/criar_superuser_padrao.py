@@ -17,5 +17,5 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f'Superuser "{username}" criado com sucesso!'))
             else:
                 self.stdout.write(self.style.SUCCESS(f'Superuser "{username}" já existe.'))
-        except IntegrityError:
-            self.stdout.write(self.style.ERROR(f'Erro ao criar superuser "{username}".')) 
+        except IntegrityError as e:
+          self.stdout.write(self.style.ERROR(f'Erro ao criar superuser "{username}": {e}'))

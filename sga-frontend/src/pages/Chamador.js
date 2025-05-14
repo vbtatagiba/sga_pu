@@ -4,20 +4,20 @@ import axios from 'axios';
 import API_ENDPOINTS from '../config/api';
 
 const Chamador = () => {
-  const [ultimaChamada, setUltimaChamada] = useState(null); // Estado para armazenar a última chamada
+  const [ultimaChamada, setUltimaChamada] = useState(null);
 
   const chamarProximo = async () => {
     try {
-      // Obtém a mesa selecionada do localStorage
       const mesaSelecionada = localStorage.getItem("mesa") || "1";
-      
-      // Faz uma requisição para chamar o próximo atendimento, enviando a mesa selecionada
+  
       const response = await axios.post(API_ENDPOINTS.CHAMAR_PROXIMO, {
         mesa: mesaSelecionada
       });
-      setUltimaChamada(response.data); // Atualiza o estado com a última chamada
+  
+      const chamada = response.data;
+      setUltimaChamada(chamada);
     } catch (error) {
-      console.error('Erro ao chamar próximo:', error); // Log de erro
+      console.error('Erro ao chamar próximo:', error);
     }
   };
 
@@ -33,11 +33,19 @@ const Chamador = () => {
               Senha: <strong>{ultimaChamada.senha}</strong>
             </Typography>
             <Typography variant="h6">Mesa: {ultimaChamada.mesa}</Typography>
+            <Typography variant="body1" sx={{ marginTop: 1 }}>
+              Status: <strong>{ultimaChamada.status}</strong>
+            </Typography>
           </>
         ) : (
           <Typography variant="h6">Nenhuma senha chamada ainda</Typography>
         )}
-        <Button variant="contained" color="primary" onClick={chamarProximo} sx={{ marginTop: 2 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={chamarProximo}
+          sx={{ marginTop: 2 }}
+        >
           Chamar Próximo
         </Button>
       </Paper>

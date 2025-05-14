@@ -86,7 +86,7 @@ DATABASES = {
         'NAME': 'sga_db',
         'USER': 'root',
         'PASSWORD': '12345678',
-        'HOST': '10.1.218.112',  # Endereço IP do servidor MySQL
+        'HOST': '127.0.0.1',  # Endereço IP do servidor MySQL
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -119,7 +119,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "http://10.1.218.112:3000",
+    "http://127.0.0.1:3000",
 ]
 
 # Internationalization

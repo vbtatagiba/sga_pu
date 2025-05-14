@@ -62,10 +62,13 @@ class AtendimentoViewSet(viewsets.ModelViewSet):
     def chamar_proximo(self, request):
         """Chama a próxima senha na fila e finaliza a anterior automaticamente"""
         # Obtém a mesa selecionada do request
-        mesa_selecionada = request.data.get('mesa', 1)
+        mesa_selecionada_str = str(request.data.get('mesa', '1')) # Garante que seja string
         
-        # Finaliza o atendimento anterior da mesma mesa
-        atendimento_anterior = Atendimento.objects.filter(mesa=mesa_selecionada, status='chamado').order_by('-chamado_em').first()
+        # Finaliza o atendimento anterior da mesma mesa (chamado ou em atendimento)
+        atendimento_anterior = Atendimento.objects.filter(
+            mesa=mesa_selecionada_str, 
+            status__in=['chamado', 'em_atendimento'] # Considera ambos os status
+        ).order_by('-chamado_em').first()
         
         if atendimento_anterior:
             atendimento_anterior.status = 'finalizado'
@@ -73,7 +76,7 @@ class AtendimentoViewSet(viewsets.ModelViewSet):
             atendimento_anterior.save()
 
         # Primeiro, tenta buscar a próxima senha pendente para a mesa selecionada
-        atendimento = Atendimento.objects.filter(mesa=mesa_selecionada, status='pendente').order_by('criado_em').first()
+        atendimento = Atendimento.objects.filter(mesa=mesa_selecionada_str, status='pendente').order_by('criado_em').first()
         
         # Se não houver senha pendente para a mesa selecionada, busca a próxima senha pendente de qualquer mesa
         if not atendimento:
@@ -83,8 +86,8 @@ class AtendimentoViewSet(viewsets.ModelViewSet):
             if not atendimento:
                 return Response({"message": "Nenhuma senha na fila."}, status=400)
             
-            # Atualiza a mesa do atendimento para a mesa selecionada
-            atendimento.mesa = mesa_selecionada
+        # Atualiza a mesa do atendimento para a mesa selecionada
+        atendimento.mesa = mesa_selecionada_str
         
         atendimento.status = 'chamado'
         atendimento.chamado_em = now()
@@ -100,11 +103,22 @@ class AtendimentoViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def painel_chamadas(self, request):
-        """Retorna as senhas atualmente chamadas por mesa."""
-        # Busca as senhas chamadas por mesa
-        mesa1 = Atendimento.objects.filter(mesa=1, status='chamado').first()
-        mesa2 = Atendimento.objects.filter(mesa=2, status='chamado').first()
-        mesa3 = Atendimento.objects.filter(mesa=3, status='chamado').first()
+        """Retorna as senhas atualmente chamadas ou em atendimento por mesa."""
+        # Busca as senhas chamadas ou em atendimento por mesa, pegando a mais recente
+        mesa1 = Atendimento.objects.filter(
+            mesa='1', 
+            status__in=['chamado', 'em_atendimento']
+        ).order_by('-chamado_em').first()
+        
+        mesa2 = Atendimento.objects.filter(
+            mesa='2', 
+            status__in=['chamado', 'em_atendimento']
+        ).order_by('-chamado_em').first()
+        
+        mesa3 = Atendimento.objects.filter(
+            mesa='3', 
+            status__in=['chamado', 'em_atendimento']
+        ).order_by('-chamado_em').first()
         
         # Busca as últimas 10 senhas finalizadas para o histórico
         historico = Atendimento.objects.filter(status='finalizado').order_by('-finalizado_em')[:10]
@@ -115,6 +129,28 @@ class AtendimentoViewSet(viewsets.ModelViewSet):
             'mesa3': AtendimentoSerializer(mesa3).data if mesa3 else None,
             'historico': AtendimentoSerializer(historico, many=True).data
         })
+    
+    @action(detail=True, methods=['put'], url_path='iniciar-atendimento')
+    def iniciar_atendimento(self, request, pk=None):
+        try:
+            atendimento = Atendimento.objects.get(pk=pk, status='chamado')
+        except Atendimento.DoesNotExist:
+            return Response(
+                {'detail': 'Atendimento não encontrado ou status inválido.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        atendimento.status = 'em_atendimento'
+        atendimento.inicio_em = timezone.now()
+        atendimento.save()
+        serializer = self.get_serializer(atendimento)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+  
+    @action(detail=False, methods=['get'], url_path='chamados_ativos')
+    def chamados_ativos(self, request):
+        chamados = Atendimento.objects.filter(status='chamado').order_by('chamado_em')
+        serializer = self.get_serializer(chamados, many=True)
+        return Response(serializer.data)
 
 class ServicoViewSet(viewsets.ModelViewSet):
     queryset = Servico.objects.all()

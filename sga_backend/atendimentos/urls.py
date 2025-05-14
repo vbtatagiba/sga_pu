@@ -6,6 +6,7 @@ router = DefaultRouter()
 router.register(r'servicos', views.ServicoViewSet)
 router.register(r'atendimentos', views.AtendimentoViewSet)
 
+
 urlpatterns = [
     path('', include(router.urls)),
     path('api/atendimentos/gerar_senha/', views.AtendimentoViewSet.as_view({'post': 'gerar_senha'}), name='gerar_senha'),

@@ -11,12 +11,12 @@ const MesaSchema = {
   servico_nome: PropTypes.string
 };
 
+// Corrigido: Simplesmente retorna os dados da API se existirem e tiverem ID,
+// ou null caso contrário. Preserva todos os campos.
 const validateMesaData = (data) => {
-  if (!data) return null;
-  return {
-    senha: data.senha || null,
-    servico_nome: data.servico_nome || 'Serviço não especificado'
-  };
+  // Se data existir e tiver um id, retorna um clone superficial para evitar mutações.
+  // Caso contrário, retorna null.
+  return data && data.id ? { ...data } : null;
 };
 
 const PainelChamadas = () => {
@@ -80,19 +80,27 @@ const PainelChamadas = () => {
     setLendo(true);
 
     while (senhasParaFalarRef.current.length > 0) {
-      const proximaSenha = senhasParaFalarRef.current[0];
+      const proximaSenha = senhasParaFalarRef.current[0]; 
       
       await new Promise(resolve => {
-        falarSenha(proximaSenha.senha, proximaSenha.mesa, proximaSenha.servico)
+        falarSenha(proximaSenha.senha, proximaSenha.mesa, proximaSenha.servico_nome || proximaSenha.servico) // Usa servico_nome ou servico
           .finally(() => {
-            // Remove a senha processada da fila
             senhasParaFalarRef.current = senhasParaFalarRef.current.slice(1);
             setSenhasParaFalar(senhasParaFalarRef.current);
             resolve();
           });
       });
 
-      // Intervalo entre senhas
+      if (proximaSenha.status === 'chamado') {
+        try {
+          await axios.put(
+            `${API_ENDPOINTS.ATENDIMENTOS}/${proximaSenha.id}/iniciar-atendimento/`
+          );
+        } catch (error) {
+          console.error(`Erro ao iniciar atendimento para ${proximaSenha.id}:`, error);
+        }
+      }
+
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
@@ -101,26 +109,36 @@ const PainelChamadas = () => {
   };
   
   const verificarNovasSenhas = (novosDados) => {
-    const novasSenhasParaFalar = [];
+    const senhasParaAdicionarAFila = [];
   
-    ['mesa1', 'mesa2', 'mesa3'].forEach(mesa => {
-      const dadosMesa = novosDados[mesa] || {};
-      const senhaAtual = dadosMesa.senha;
-      const senhaAnterior = (dadosPainel[mesa] || {}).senha;
-  
-      if (senhaAtual && senhaAtual !== senhaAnterior) {
-        novasSenhasParaFalar.push({
-          senha: senhaAtual,
-          mesa: mesa.replace('mesa', ''),
-          servico: dadosMesa.servico_nome || 'Serviço Geral'
-        });
+    ['mesa1', 'mesa2', 'mesa3'].forEach(mesaKey => {
+      const dadosMesaAtual = novosDados[mesaKey];
+      const dadosMesaAnterior = dadosPainel[mesaKey];
+
+      if (dadosMesaAtual && dadosMesaAtual.status === 'chamado' && 
+          (!dadosMesaAnterior || dadosMesaAtual.id !== dadosMesaAnterior.id)) {
+        
+        const jaNaFilaDeProcessamento = senhasParaFalarRef.current.some(s => s.id === dadosMesaAtual.id);
+        const jaNaListaParaAdicionarAgora = senhasParaAdicionarAFila.some(s => s.id === dadosMesaAtual.id);
+
+        if (!jaNaFilaDeProcessamento && !jaNaListaParaAdicionarAgora) {
+          // Adiciona uma cópia com os campos mínimos necessários para falar e processar,
+          // garantindo a estrutura correta.
+          senhasParaAdicionarAFila.push({
+            id: dadosMesaAtual.id,
+            senha: dadosMesaAtual.senha,
+            status: dadosMesaAtual.status, // Importante para processarFila
+            mesa: mesaKey.replace('mesa', ''), 
+            servico_nome: dadosMesaAtual.servico_nome || 'Serviço Geral' // Para falarSenha
+          });
+        }
       }
     });
   
-    if (novasSenhasParaFalar.length > 0) {
-      const novaFila = [...senhasParaFalarRef.current, ...novasSenhasParaFalar];
-      setSenhasParaFalar(novaFila);
-      senhasParaFalarRef.current = novaFila;
+    if (senhasParaAdicionarAFila.length > 0) {
+      const novaFilaCompleta = [...senhasParaFalarRef.current, ...senhasParaAdicionarAFila];
+      setSenhasParaFalar(novaFilaCompleta);
+      senhasParaFalarRef.current = novaFilaCompleta;
       
       if (!falandoRef.current) {
         processarFila();
@@ -217,7 +235,7 @@ const PainelChamadas = () => {
               <ListItem key={index}>
                 <ListItemText 
                   primary={`${senha.senha} - Mesa ${senha.mesa}`}
-                  secondary={senha.servico}
+                  secondary={senha.servico_nome}
                 />
               </ListItem>
             ))}

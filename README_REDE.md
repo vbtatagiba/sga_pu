@@ -42,7 +42,7 @@ DATABASES = {
         'NAME': 'sga_db',
         'USER': 'root',
         'PASSWORD': '12345678',
-        'HOST': '10.1.218.112',  # Endereço IP do servidor MySQL
+        'HOST': '127.0.0.1',  # Endereço IP do servidor MySQL
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -76,7 +76,7 @@ Se você precisar alterar o endereço IP do servidor, basta modificar a constant
 
 ```javascript
 // Configuração da API
-const API_BASE_URL = 'http://10.1.218.112:8000';
+const API_BASE_URL = 'http://127.0.0.1:8000';
 ```
 
 ## Executando o Sistema

@@ -23,6 +23,7 @@ class Atendimento(models.Model):
     STATUS_CHOICES = [
         ('pendente', 'Pendente'),
         ('chamado', 'Chamado'),
+        ('em_atendimento', 'Em Atendimento'),
         ('finalizado', 'Finalizado'),
     ]
 
@@ -36,6 +37,7 @@ class Atendimento(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente')
     criado_em = models.DateTimeField(auto_now_add=True)
     chamado_em = models.DateTimeField(null=True, blank=True)
+    inicio_em = models.DateTimeField(null=True, blank=True)
     finalizado_em = models.DateTimeField(null=True, blank=True)
     mesa = models.CharField(max_length=10, null=True, blank=True, help_text="Número da mesa do atendimento")
     periodo = models.CharField(max_length=10, choices=PERIODO_CHOICES, null=True, blank=True)

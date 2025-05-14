@@ -6,7 +6,7 @@ venv\Scripts\activate
 
 🔹 1.2 - Instalar Django, DRF, MySQL e dependências
 
-pip install django djangorestframework mysqlclient daphne django-cors-headers channels redis celery
+pip install django djangorestframework mysqlclient daphne django-cors-headers channels redis celery django_extensions
 
 🔹 1.3 - Criar o projeto Django
 
