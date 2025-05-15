@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | SGA Admin{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static "admin/css/dashboard.css" %}">
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {# Certifique-se de que favicon.ico esteja em sga_backend/atendimentos/static/admin/img/favicon.ico #}
+  <link rel="shortcut icon" href="{% static 'admin/img/favicon.ico' %}" />
+{% endblock %}
+
+{% block branding %}
+<!-- Custom Header -->
+<header id="custom-admin-header">
+  <div class="toolbar">
+    <div class="header-content">
+      {# Certifique-se de que Logo_pu.png esteja em sga_backend/atendimentos/static/admin/img/Logo_pu.png #}
+      <img src="{% static 'admin/img/Logo_pu.png' %}" alt="Logo PU" id="admin-logo" />
+      <h1 id="admin-title">Sistema de Gestão de Atendimentos</h1>
+    </div>
+  </div>
+</header>
+{% endblock %} 

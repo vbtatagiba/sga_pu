@@ -6,9 +6,9 @@ from .models import Servico, Atendimento
 
 @admin.register(Servico)
 class ServicoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'sigla', 'tempo_estimado')
+    list_display = ('nome', 'sigla', 'tempo_estimado', 'ultimo_numero')
     search_fields = ('nome', 'sigla')
-    actions = ['exportar_servicos']
+    actions = ['exportar_servicos', 'reiniciar_numeros_senhas']
 
     def exportar_servicos(self, request, queryset):
         response = HttpResponse(content_type='text/csv')
@@ -23,6 +23,14 @@ class ServicoAdmin(admin.ModelAdmin):
         return response
     
     exportar_servicos.short_description = "Exportar serviços selecionados para CSV"
+
+    def reiniciar_numeros_senhas(self, request, queryset):
+        for servico in queryset:
+            servico.ultimo_numero = 0
+            servico.save()
+        self.message_user(request, f"{queryset.count()} serviço(s) tiveram seus números de senha reiniciados com sucesso.")
+    
+    reiniciar_numeros_senhas.short_description = "Reiniciar números de senha dos serviços selecionados"
 
 @admin.register(Atendimento)
 class AtendimentoAdmin(admin.ModelAdmin):

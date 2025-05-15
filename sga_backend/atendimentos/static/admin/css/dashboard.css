@@ -1,138 +1,142 @@
-.dashboard-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+/* General Body & Font */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f7f6; /* Lighter gray background for the page */
+    color: #333;
+    line-height: 1.6;
 }
 
+.dashboard-container {
+    max-width: 1300px; /* Slightly wider */
+    margin: 20px auto; /* Added top/bottom margin */
+    padding: 25px;
+    gap: 25px; /* Added gap for overall container if it becomes a grid/flex parent */
+}
+
+/* Section Styling */
 .section {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
-    padding: 20px;
+    background: #ffffff; /* Pure white for sections */
+    border-radius: 12px; /* More rounded corners */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Softer, more diffused shadow */
+    margin-bottom: 35px; /* Increased spacing between sections */
+    padding: 25px;
 }
 
 .section h2 {
-    color: #333;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #eee;
+    color: #2c3e50; /* Darker, more professional blue-gray for headings */
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0; /* Lighter border */
+    font-size: 1.8em; /* Slightly larger heading */
+    font-weight: 600;
 }
 
-.monitoring-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.monitoring-card {
-    background: #f8f9fa;
-    border-radius: 6px;
-    padding: 15px;
-}
-
-.monitoring-card h3 {
-    color: #444;
-    margin-bottom: 15px;
-    font-size: 1.1em;
-}
-
-.attendance-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    background: #fff;
-    border-radius: 4px;
-    margin-bottom: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.mesa {
-    font-weight: bold;
-    color: #666;
-}
-
-.senha {
-    color: #2196F3;
-    font-weight: bold;
-}
-
-.servico {
-    color: #4CAF50;
-}
-
-.queue-stats {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px;
-    background: #fff;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-
-.performance-filters {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.performance-filters select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: #fff;
-    min-width: 200px;
-}
-
-.performance-filters button {
-    padding: 8px 16px;
-    background: #2196F3;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.performance-filters button:hover {
-    background: #1976D2;
-}
-
-.performance-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
+/* Card Styling (Monitoring & Performance) */
+.monitoring-card,
 .performance-card {
-    background: #f8f9fa;
-    border-radius: 6px;
-    padding: 15px;
+    background: #fdfdfd; /* Slightly off-white for cards */
+    border: 1px solid #e7e7e7; /* Subtle border for cards */
+    border-radius: 8px;
+    padding: 20px;
+    transition: box-shadow 0.3s ease;
 }
 
+.monitoring-card:hover,
+.performance-card:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1); /* Enhanced shadow on hover */
+}
+
+.monitoring-card h3,
 .performance-card h3 {
-    color: #444;
-    margin-bottom: 15px;
-    font-size: 1.1em;
+    color: #34495e; /* Another shade of blue-gray for card titles */
+    margin-bottom: 20px;
+    font-size: 1.3em; /* Slightly larger card titles */
+    font-weight: 500;
 }
 
+/* Item Styling within Cards */
+.attendance-item,
+.queue-stats,
 .stat-item {
     background: #fff;
-    border-radius: 4px;
+    border-radius: 6px;
     padding: 15px;
-    margin-bottom: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 12px;
+    border: 1px solid #f0f0f0;
+    /* Removed individual box-shadow as card has shadow now, or use a very subtle one */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
 
 .stat-item h4 {
-    color: #333;
-    margin-bottom: 10px;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 1.1em;
 }
 
 .stat-item p {
-    color: #666;
-    margin: 5px 0;
+    color: #555;
+    margin: 4px 0;
+    font-size: 0.95em;
+}
+
+/* Text Styling for specific elements */
+.mesa {
+    font-weight: 600; /* Bolder */
+    color: #555;
+}
+
+.senha {
+    color: #3498db; /* Softer blue */
+    font-weight: 700; /* Very bold */
+    font-size: 1.1em;
+}
+
+.servico {
+    color: #2ecc71; /* Softer green */
+    font-style: italic;
+}
+
+/* Filters & Buttons */
+.performance-filters {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 25px;
+    align-items: center;
+}
+
+.performance-filters select,
+.performance-filters button,
+.management-actions button {
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    transition: all 0.2s ease-in-out;
+}
+
+.performance-filters select {
+    border: 1px solid #ccc;
+    background: #fff;
+    min-width: 220px;
+}
+
+.performance-filters select:focus,
+.performance-filters button:focus,
+.management-actions button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.4); /* Focus ring like Bootstrap */
+}
+
+
+.performance-filters button {
+    background: #3498db; /* Primary action blue */
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.performance-filters button:hover {
+    background: #2980b9; /* Darker blue on hover */
 }
 
 .management-actions {
@@ -142,50 +146,109 @@
 }
 
 .management-actions button {
-    padding: 10px 20px;
     border: none;
-    border-radius: 4px;
     cursor: pointer;
     font-weight: 500;
-    transition: all 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .management-actions button.danger-button {
-    background: #dc3545;
+    background: #e74c3c; /* Softer red */
     color: #fff;
 }
 
 .management-actions button.danger-button:hover {
-    background: #c82333;
+    background: #c0392b; /* Darker red */
 }
 
 .management-actions button:not(.danger-button) {
-    background: #28a745;
+    background: #2ecc71; /* Primary green */
     color: #fff;
 }
 
 .management-actions button:not(.danger-button):hover {
-    background: #218838;
+    background: #27ae60; /* Darker green */
 }
 
+
+/* Grid Layouts */
+.monitoring-grid,
+.performance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Slightly larger min card width */
+    gap: 25px;
+}
+
+
+/* Responsive Adjustments (inherited from original, kept for consistency) */
 @media (max-width: 768px) {
     .dashboard-container {
-        padding: 10px;
+        padding: 15px;
+        margin: 10px auto;
+    }
+
+    .section h2 {
+        font-size: 1.5em;
+    }
+    .monitoring-card h3,
+    .performance-card h3 {
+        font-size: 1.15em;
     }
 
     .performance-filters {
         flex-direction: column;
+        gap: 15px;
     }
 
-    .performance-filters select {
+    .performance-filters select,
+    .performance-filters button { /* Ensure button also takes full width */
         width: 100%;
     }
 
     .management-actions {
         flex-direction: column;
+        gap: 10px;
     }
 
     .management-actions button {
         width: 100%;
     }
+}
+
+/* Custom Admin Header Styles (para replicar Header.js) */
+#custom-admin-header {
+  background-color: white;
+  padding-top: 8px; /* Aproxima py: 1 do MUI */
+  padding-bottom: 8px;
+  box-shadow: none; /* elevation={0} */
+  position: static; /* position="static" */
+  border-bottom: 1px solid #e0e0e0; /* Adiciona uma linha sutil como MUI AppBar pode ter */
+}
+
+#custom-admin-header .toolbar {
+  display: flex;
+  align-items: center;
+  /* O padding padrão do Toolbar do MUI pode variar, ajuste se necessário */
+  padding-left: 24px; 
+  padding-right: 24px;
+  min-height: 56px; /* Altura comum para AppBar mobile, desktop pode ser 64px */
+}
+
+#custom-admin-header .header-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+#admin-logo {
+  height: 60px; /* Ajustado de 120px para algo mais comum em headers, pode ser ajustado */
+  margin-right: 20px; /* Ajustado de 70px para um espaçamento mais usual */
+}
+
+#admin-title {
+  color: #1976d2; /* Cor primária provisória (primary.main) */
+  font-weight: bold;
+  font-size: 1.6rem; /* Ajustado de 1.8rem para melhor encaixe */
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Consistente com o body */
 } 
