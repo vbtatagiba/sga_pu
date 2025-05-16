@@ -2,4 +2,5 @@ Django>=3.2,<4.0
 djangorestframework
 mysqlclient
 django_extensions
+python-dotenv ==1.0.1
 django-cors-headers 

@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +30,7 @@ SECRET_KEY = 'django-insecure-*h_yi^jf@58xid9k8q_1f2hyw-6&++-=6lmhv#a_^kz7lkqh0+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*', '10.1.218.114', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -80,17 +84,28 @@ APPEND_SLASH = False
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# Configuração do ambiente
+IS_DOCKER = os.getenv('IS_DOCKER', 'False').lower() == 'true'
+
+# Configurações do banco de dados
+DB_HOST = 'db' if IS_DOCKER else 'localhost'
+DB_PORT = os.getenv('MYSQL_PORT', '3306')
+DB_NAME = os.getenv('MYSQL_DATABASE', 'sga_db')
+DB_USER = os.getenv('MYSQL_USER', 'sga_user')
+DB_PASSWORD = os.getenv('MYSQL_PASSWORD', '12345678')
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'sga_db',
-        'USER': 'root',
-        'PASSWORD': '12345678',
-        'HOST': '127.0.0.1',  # Endereço IP do servidor MySQL
-        'PORT': '3306',
+        'NAME': DB_NAME,
+        'USER': DB_USER,
+        'PASSWORD': DB_PASSWORD,
+        'HOST': DB_HOST,
+        'PORT': DB_PORT,
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
+            'connect_timeout': 60
         }
     }
 }
@@ -118,8 +133,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3000",
+    "http://0.0.0.0:3000",
+    "http://10.1.218.114:3000",
 ]
 
 # Internationalization

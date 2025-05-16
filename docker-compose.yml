@@ -1,39 +1,98 @@
-version: '3.8'
-
 services:
-  backend:
-    build: ./sga_backend
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./sga_backend:/app
-    environment:
-      - DEBUG=1
-      - DJANGO_SETTINGS_MODULE=sga_backend.settings
-    depends_on:
-      - db
-
-  frontend:
-    build: ./sga-frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./sga-frontend:/app
-      - /app/node_modules
-    environment:
-      - REACT_APP_API_URL=http://127.0.0.1:8000
-
   db:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3306:3306"  # A porta 3306 será exposta para a máquina host
     environment:
       - MYSQL_DATABASE=sga_db
       - MYSQL_USER=sga_user
-      - MYSQL_PASSWORD=sga_password
-      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    networks:
+      - sga_network
+    command: >
+        --default-authentication-plugin=mysql_native_password
+        --bind-address=0.0.0.0
+        --character-set-server=utf8mb4
+        --collation-server=utf8mb4_unicode_ci
+        --max_allowed_packet=128M
+        --innodb_buffer_pool_size=1G
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    build:
+      context: ./sga_backend
+      dockerfile: Dockerfile
+    command: python manage.py migrate
+    environment:
+      - DEBUG=0
+      - DJANGO_SETTINGS_MODULE=sga_backend.settings
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+      - IS_DOCKER=true
+      - MYSQL_DATABASE=sga_db
+      - MYSQL_USER=sga_user
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sga_network
+
+  backend:
+    build:
+      context: ./sga_backend
+      dockerfile: Dockerfile
+    ports:
+      - "10.1.218.114:8000:8000"  # Mapeando a porta 8000 do container para a máquina host no IP local
+    environment:
+      - DEBUG=0
+      - DJANGO_SETTINGS_MODULE=sga_backend.settings
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+      - IS_DOCKER=true
+      - MYSQL_DATABASE=sga_db
+      - MYSQL_USER=sga_user
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_HOST=db
+      - MYSQL_PORT=3306
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - sga_network
+    command: gunicorn --bind 0.0.0.0:8000 sga_backend.wsgi:application  # Garantindo que o Gunicorn escute todas as interfaces
+
+  frontend:
+    build:
+      context: ./sga-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "10.1.218.114:3000:3000"  # Mapeando a porta 3000 do container para a máquina host no IP local
+    environment:
+      - REACT_APP_API_URL=/api
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - sga_network
+
+networks:
+  sga_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
 
 volumes:
-  mysql_data: 
+  mysql_data:

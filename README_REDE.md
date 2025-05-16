@@ -42,7 +42,7 @@ DATABASES = {
         'NAME': 'sga_db',
         'USER': 'root',
         'PASSWORD': '12345678',
-        'HOST': '127.0.0.1',  # Endereço IP do servidor MySQL
+        'HOST': '0.0.0.0',  # Endereço IP do servidor MySQL
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -54,7 +54,7 @@ DATABASES = {
 
 ### Iniciando o servidor Django na rede
 
-Para que outras máquinas na rede possam acessar o servidor Django, você precisa iniciá-lo com o endereço 0.0.0.0 em vez de 127.0.0.1. Use o script `run_server.bat` que foi criado para isso:
+Para que outras máquinas na rede possam acessar o servidor Django, você precisa iniciá-lo com o endereço 0.0.0.0 em vez de 0.0.0.0. Use o script `run_server.bat` que foi criado para isso:
 
 ```
 cd sga_backend
@@ -76,7 +76,7 @@ Se você precisar alterar o endereço IP do servidor, basta modificar a constant
 
 ```javascript
 // Configuração da API
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'http://0.0.0.0:8000';
 ```
 
 ## Executando o Sistema
@@ -101,4 +101,4 @@ Se ainda estiver enfrentando problemas de conexão:
 2. Verifique se o servidor MySQL está configurado para aceitar conexões remotas.
 3. Verifique se as credenciais do banco de dados estão corretas.
 4. Verifique se o endereço IP do servidor MySQL está correto nas configurações do Django.
-5. Verifique se o servidor Django está sendo iniciado com o endereço 0.0.0.0 e não 127.0.0.1. 
+5. Verifique se o servidor Django está sendo iniciado com o endereço 0.0.0.0 e não 0.0.0.0. 

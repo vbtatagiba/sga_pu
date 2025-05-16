@@ -2,11 +2,21 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
-from django.core.management import call_command
+from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 def create_superuser(apps, schema_editor):
-    call_command('criar_superuser_padrao')
+    User = apps.get_model('auth', 'User')
+    User.objects.create_superuser(
+        username='SGAadmin',
+        email='vbtatagiba77@gmail.com',
+        password='passaporte2025',
+        first_name='Admin',
+        last_name='SGA',
+        last_login=timezone.now(),
+        date_joined=timezone.now()
+    )
 
 
 class Migration(migrations.Migration):
@@ -14,6 +24,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        # Dependências de migração (adicione se necessário)
     ]
 
     operations = [
