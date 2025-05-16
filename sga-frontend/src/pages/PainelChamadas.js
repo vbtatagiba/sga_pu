@@ -227,20 +227,6 @@ const PainelChamadas = () => {
       }}
     >
       <Container maxWidth="lg" sx={{ width: '100%' }}>
-        {/* Componente de debug da fila */}
-        <Box sx={{ position: 'fixed', top: 10, right: 10, bgcolor: 'rgba(0,0,0,0.7)', color: 'white', p: 2 }}>
-          <Typography variant="subtitle2">Fila de Atendimento</Typography>
-          <List dense>
-            {senhasParaFalar.map((senha, index) => (
-              <ListItem key={index}>
-                <ListItemText 
-                  primary={`${senha.senha} - Mesa ${senha.mesa}`}
-                  secondary={senha.servico_nome}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Box>
 
         <Box sx={{ 
           display: 'flex', 

@@ -53,7 +53,7 @@ services:
       context: ./sga_backend
       dockerfile: Dockerfile
     ports:
-      - "10.1.218.114:8000:8000"  # Mapeando a porta 8000 do container para a máquina host no IP local
+      - "10.1.218.91:8000:8000"  # Mapeando a porta 8000 do container para a máquina host no IP local
     environment:
       - DEBUG=0
       - DJANGO_SETTINGS_MODULE=sga_backend.settings
@@ -77,7 +77,7 @@ services:
       context: ./sga-frontend
       dockerfile: Dockerfile
     ports:
-      - "10.1.218.114:3000:3000"  # Mapeando a porta 3000 do container para a máquina host no IP local
+      - "10.1.218.91:3000:3000"  # Mapeando a porta 3000 do container para a máquina host no IP local
     environment:
       - REACT_APP_API_URL=/api
     depends_on:
